@@ -18,11 +18,10 @@ describe("NavigationBar", () => {
     expect(screen.getByText("Engineering Plan")).toBeInTheDocument();
   });
 
-  it("renders the global progress summary", () => {
+  it("does not render the global progress summary in the nav bar", () => {
     render(<NavigationBar roadmaps={mockRoadmaps} activeId="roadmap-1" onSelect={() => {}} />);
-    // 10+5=15 completed, 40+20=60 total, 25%
-    expect(screen.getByText("15/60")).toBeInTheDocument();
-    expect(screen.getByText("25%")).toBeInTheDocument();
+    // The aggregate count was removed from the top bar.
+    expect(screen.queryByText("15/60")).not.toBeInTheDocument();
   });
 
   it("calls onNavigate with 'landing' when title is clicked", () => {

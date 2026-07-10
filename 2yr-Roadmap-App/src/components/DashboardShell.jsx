@@ -1,7 +1,46 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRoadmapRegistry } from '../hooks/useRoadmapRegistry.js';
 import { useProgressStore } from '../hooks/useProgressStore.js';
 import { useMigration } from '../hooks/useMigration.js';
+
+/**
+ * Compute metadata (total tasks + completed count) for a roadmap given a
+ * progress map (taskId -> boolean). Only counts task IDs that exist in the roadmap.
+ */
+function computeMeta(roadmap, tasksMap) {
+  let totalTasks = 0;
+  let completedTasks = 0;
+  for (const phase of roadmap.phases) {
+    for (const week of phase.weeks) {
+      for (const task of week.tasks) {
+        totalTasks++;
+        if (tasksMap[task.id]) completedTasks++;
+      }
+    }
+  }
+  return {
+    id: roadmap.id,
+    title: roadmap.title,
+    subtitle: roadmap.subtitle,
+    dateRange: roadmap.dateRange,
+    completedTasks,
+    totalTasks,
+  };
+}
+
+/**
+ * Read a roadmap's persisted progress map from localStorage.
+ * Returns an empty object if nothing is stored or parsing fails.
+ */
+function readStoredTasks(roadmapId) {
+  try {
+    // Matches the composite key used by useProgressStore: `progress:{roadmapId}`.
+    const raw = localStorage.getItem(`progress:${roadmapId}`);
+    return raw ? (JSON.parse(raw).tasks || {}) : {};
+  } catch {
+    return {};
+  }
+}
 import NavigationBar from './NavigationBar.jsx';
 import LandingView from './LandingView.jsx';
 import RoadmapView from './RoadmapView.jsx';
@@ -24,14 +63,24 @@ export default function DashboardShell() {
   const [viewMode, setViewMode] = useState('landing');
 
   // Integrate custom hooks
-  const { roadmaps, meta, addRoadmap, updateRoadmap, loading: registryLoading, error: registryError } = useRoadmapRegistry();
-  const { progress, toggle, loading: progressLoading, syncing, error: progressError, isOffline } = useProgressStore(activeRoadmapId);
-  const { migrated, migrating } = useMigration();
+  const { roadmaps, addRoadmap, updateRoadmap, loading: registryLoading, error: registryError } = useRoadmapRegistry();
+  const { progress, toggle } = useProgressStore(activeRoadmapId);
+  const { migrating } = useMigration();
 
   // Derive active roadmap data from registry
   const activeRoadmap = activeRoadmapId
     ? roadmaps.find((r) => r.id === activeRoadmapId) || null
     : null;
+
+  // Build metadata for each roadmap with live completion counts.
+  // The active roadmap uses the live `progress` state (updates instantly on toggle);
+  // all others read their persisted progress from localStorage.
+  const meta = useMemo(() => {
+    return roadmaps.map((r) => {
+      const tasksMap = r.id === activeRoadmapId ? progress : readStoredTasks(r.id);
+      return computeMeta(r, tasksMap);
+    });
+  }, [roadmaps, activeRoadmapId, progress]);
 
   /**
    * Handle roadmap selection from NavigationBar/Selector (Req 1.3)
@@ -178,10 +227,12 @@ export default function DashboardShell() {
         onNavigate={handleGoHome}
       />
 
-      {/* Error notifications */}
-      {(registryError || progressError) && (
+      {/* Error notifications — only genuine registry errors are surfaced.
+          Offline/cached-data notices from the progress store are expected in
+          local-only mode and are intentionally not shown. */}
+      {registryError && (
         <div style={styles.errorBanner}>
-          <span style={styles.errorText}>{registryError || progressError}</span>
+          <span style={styles.errorText}>{registryError}</span>
         </div>
       )}
 

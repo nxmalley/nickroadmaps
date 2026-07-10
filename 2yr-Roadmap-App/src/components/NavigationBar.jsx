@@ -244,9 +244,6 @@ export default function NavigationBar({ roadmaps, activeId, onSelect, onNavigate
           onSelect={onSelect}
         />
       </div>
-
-      {/* Right: Global progress */}
-      <GlobalProgressSummary roadmaps={roadmaps} />
     </nav>
   );
 }
