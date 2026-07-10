@@ -6,9 +6,8 @@
  * @param {object} props
  * @param {import('../types/roadmap.js').RoadmapMeta[]} props.roadmaps - Array of roadmap metadata
  * @param {(id: string) => void} props.onSelectRoadmap - Called when a roadmap card is clicked
- * @param {() => void} props.onCreateRoadmap - Called when "Create Roadmap" is clicked
  */
-export default function LandingView({ roadmaps, onSelectRoadmap, onCreateRoadmap }) {
+export default function LandingView({ roadmaps, onSelectRoadmap }) {
   /**
    * Format a date range for display.
    * Converts ISO date strings to a human-friendly format like "Jun 2024 – Aug 2026".
@@ -44,32 +43,6 @@ export default function LandingView({ roadmaps, onSelectRoadmap, onCreateRoadmap
             {roadmaps.length} {roadmaps.length === 1 ? "roadmap" : "roadmaps"} available
           </p>
         </div>
-        <button
-          onClick={onCreateRoadmap}
-          aria-label="Create Roadmap"
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontWeight: 500,
-            fontFamily: "var(--font-sans)",
-            borderRadius: "var(--border-radius-md)",
-            border: "1px solid var(--color-border-secondary)",
-            background: "var(--color-background-secondary)",
-            color: "var(--color-text-primary)",
-            cursor: "pointer",
-            transition: "border-color 0.15s, background 0.15s",
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.borderColor = "var(--color-text-secondary)";
-            e.currentTarget.style.background = "var(--color-border-tertiary)";
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = "var(--color-border-secondary)";
-            e.currentTarget.style.background = "var(--color-background-secondary)";
-          }}
-        >
-          + Create Roadmap
-        </button>
       </div>
 
       {/* Roadmap cards grid */}
@@ -179,9 +152,6 @@ export default function LandingView({ roadmaps, onSelectRoadmap, onCreateRoadmap
           color: "var(--color-text-tertiary)",
         }}>
           <p style={{ fontSize: "14px", margin: "0 0 12px" }}>No roadmaps yet</p>
-          <p style={{ fontSize: "13px", margin: 0 }}>
-            Click "Create Roadmap" to get started.
-          </p>
         </div>
       )}
     </div>

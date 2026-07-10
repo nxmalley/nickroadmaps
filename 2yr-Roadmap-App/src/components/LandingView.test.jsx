@@ -79,30 +79,16 @@ describe("LandingView", () => {
     expect(onSelect).toHaveBeenCalledWith("roadmap-1");
   });
 
-  it("calls onCreateRoadmap when Create Roadmap button is clicked", () => {
-    const onCreate = vi.fn();
+  it("does not render a Create Roadmap button (roadmaps are managed in code)", () => {
     render(
       <LandingView
         roadmaps={mockRoadmaps}
         onSelectRoadmap={() => {}}
-        onCreateRoadmap={onCreate}
       />
     );
 
-    fireEvent.click(screen.getByText("+ Create Roadmap"));
-    expect(onCreate).toHaveBeenCalledOnce();
-  });
-
-  it("renders Create Roadmap button with accessible label", () => {
-    render(
-      <LandingView
-        roadmaps={mockRoadmaps}
-        onSelectRoadmap={() => {}}
-        onCreateRoadmap={() => {}}
-      />
-    );
-
-    expect(screen.getByRole("button", { name: "Create Roadmap" })).toBeInTheDocument();
+    expect(screen.queryByText("+ Create Roadmap")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create Roadmap" })).not.toBeInTheDocument();
   });
 
   it("renders empty state when no roadmaps exist", () => {

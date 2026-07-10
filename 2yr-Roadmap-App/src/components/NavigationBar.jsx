@@ -216,18 +216,26 @@ export default function NavigationBar({ roadmaps, activeId, onSelect, onNavigate
     >
       {/* Left: App title + Selector */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <span
+        <button
+          type="button"
           onClick={() => onNavigate && onNavigate("landing")}
+          aria-label="Go to dashboard"
           style={{
             fontSize: "15px",
             fontWeight: 600,
             color: "var(--color-text-primary)",
-            cursor: onNavigate ? "pointer" : "default",
+            cursor: "pointer",
             letterSpacing: "-0.3px",
+            fontFamily: "var(--font-sans)",
+            background: "transparent",
+            border: "none",
+            padding: 0,
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
         >
           Roadmap Dashboard
-        </span>
+        </button>
 
         {/* Roadmap Selector */}
         <RoadmapSelector

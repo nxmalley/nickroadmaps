@@ -134,7 +134,7 @@ describe('useRoadmapRegistry', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('falls back to nickRoadmap on fetch error', async () => {
+  it('falls back to nickRoadmap silently on fetch error (no error banner)', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useRoadmapRegistry());
@@ -143,11 +143,12 @@ describe('useRoadmapRegistry', () => {
       expect(result.current.loading).toBe(false);
     });
 
+    // No backend configured is an expected path — fall back without surfacing an error.
     expect(result.current.roadmaps).toEqual([nickRoadmap]);
-    expect(result.current.error).toBe('Network error');
+    expect(result.current.error).toBeNull();
   });
 
-  it('falls back to nickRoadmap on non-ok response', async () => {
+  it('falls back to nickRoadmap silently on non-ok response (no error banner)', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -160,7 +161,7 @@ describe('useRoadmapRegistry', () => {
     });
 
     expect(result.current.roadmaps).toEqual([nickRoadmap]);
-    expect(result.current.error).toBe('Failed to fetch roadmaps: 500');
+    expect(result.current.error).toBeNull();
   });
 
   it('computes meta array from roadmaps', async () => {
@@ -355,8 +356,11 @@ describe('useRoadmapRegistry', () => {
   });
 
   it('clears error on next successful operation', async () => {
-    // First: fail the initial fetch so error is set
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+    // Initial fetch succeeds (empty) so we start clean.
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
 
     const { result } = renderHook(() => useRoadmapRegistry());
 
@@ -364,9 +368,23 @@ describe('useRoadmapRegistry', () => {
       expect(result.current.loading).toBe(false);
     });
 
+    // A failed addRoadmap sets an error.
+    const failRoadmap = {
+      id: 'fail',
+      title: 'Fail',
+      subtitle: '',
+      dateRange: { start: '2026-01-01', end: '2026-12-31' },
+      phases: [],
+    };
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+    await act(async () => {
+      await result.current.addRoadmap(failRoadmap);
+    });
+
     expect(result.current.error).toBe('Network error');
 
-    // Now do a successful addRoadmap — error should clear
+    // Now do a successful addRoadmap — error should clear.
     const newRoadmap = {
       id: 'new',
       title: 'New',

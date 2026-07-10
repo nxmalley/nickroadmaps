@@ -117,10 +117,8 @@ export default function DashboardShell() {
       case 'landing':
         return (
           <LandingView
-            roadmaps={roadmaps}
-            meta={meta}
+            roadmaps={meta}
             onSelectRoadmap={handleSelectRoadmap}
-            onCreateNew={handleCreateNew}
           />
         );
 
@@ -172,15 +170,12 @@ export default function DashboardShell() {
 
   return (
     <div style={styles.shell}>
-      {/* Top-level navigation bar (Req 1.1) */}
+      {/* Top-level navigation bar (Req 1.1) — title links back to the dashboard */}
       <NavigationBar
         roadmaps={meta}
-        activeRoadmapId={activeRoadmapId}
-        onSelectRoadmap={handleSelectRoadmap}
-        onGoHome={handleGoHome}
-        onEditMode={viewMode === 'view' && activeRoadmap ? handleEnterEditMode : undefined}
-        syncing={syncing}
-        isOffline={isOffline}
+        activeId={activeRoadmapId}
+        onSelect={handleSelectRoadmap}
+        onNavigate={handleGoHome}
       />
 
       {/* Error notifications */}

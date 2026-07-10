@@ -70,11 +70,14 @@ export function useRoadmapRegistry() {
           setError(null);
           setLoading(false);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
-          // On fetch failure, fall back to nickRoadmap
+          // No backend configured (or it's unreachable) — fall back to the
+          // bundled roadmap and operate in local-only mode. This is an
+          // expected path when Upstash Redis isn't set up, so we don't surface
+          // an error banner for it.
           setRoadmaps([nickRoadmap]);
-          setError(err.message || 'Failed to load roadmaps');
+          setError(null);
           setLoading(false);
         }
       }
