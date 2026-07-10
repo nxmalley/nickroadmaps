@@ -385,3 +385,6 @@ The project will use [fast-check](https://github.com/dubzzz/fast-check) for prop
 - **fast-check**: Property-based testing
 - **@testing-library/react**: Component rendering and interaction
 - **msw (Mock Service Worker)**: API mocking for integration tests
+
+
+// Test
