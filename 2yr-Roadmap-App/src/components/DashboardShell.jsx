@@ -43,12 +43,10 @@ function readStoredTasks(roadmapId) {
 
 import NavigationBar from './NavigationBar.jsx';
 import LandingView from './LandingView.jsx';
-import RoadmapView from './RoadmapView.jsx';
 import FinancialRoadmap from './FinancialRoadmap.jsx';
 import EngineeringRoadmap from './EngineeringRoadmap.jsx';
 
 // Map roadmap IDs to their standalone components.
-// Roadmaps without a custom component fall back to RoadmapView.
 const ROADMAP_COMPONENTS = {
   'nick-2yr-engineering': EngineeringRoadmap,
   'financial-masterplan': FinancialRoadmap,
@@ -68,7 +66,7 @@ export default function DashboardShell() {
 
   // Integrate custom hooks
   const { roadmaps, loading: registryLoading, error: registryError } = useRoadmapRegistry();
-  const { progress, toggle } = useProgressStore(activeRoadmapId);
+  const { progress } = useProgressStore(activeRoadmapId);
   const { migrating } = useMigration();
 
   // Derive active roadmap data from registry
@@ -134,15 +132,13 @@ export default function DashboardShell() {
         }
         const CustomComponent = ROADMAP_COMPONENTS[activeRoadmapId];
         if (CustomComponent) {
-          return <CustomComponent progress={progress} onToggleTask={toggle} />;
+          return <CustomComponent />;
         }
+        // No component registered for this roadmap
         return (
-          <RoadmapView
-            roadmap={activeRoadmap}
-            progress={progress}
-            onToggleTask={toggle}
-            editMode={false}
-          />
+          <div style={styles.loadingContainer}>
+            <p style={styles.loadingText}>No view available for this roadmap.</p>
+          </div>
         );
       }
 
