@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useProgressStore } from "../hooks/useProgressStore.js";
 
 /* ─── Data ─── */
 const CAT = {
@@ -151,7 +152,8 @@ const NW_STORAGE_KEY = "financial-roadmap-networth-log";
 
 
 /* ─── Component ─── */
-export default function FinancialRoadmap({ progress, onToggleTask }) {
+export default function FinancialRoadmap() {
+  const { progress, toggle } = useProgressStore("financial-masterplan");
   const [activePhase, setActivePhase] = useState(0);
   const [activeTab, setActiveTab] = useState("tasks"); // "tasks" | "rules" | "log"
 
@@ -319,7 +321,7 @@ export default function FinancialRoadmap({ progress, onToggleTask }) {
                     return (
                       <div
                         key={task.id}
-                        onClick={() => onToggleTask(task.id)}
+                        onClick={() => toggle(task.id)}
                         style={{ padding: "10px 14px", display: "flex", gap: "10px", alignItems: "flex-start", cursor: "pointer", borderTop: "0.5px solid var(--color-border-tertiary)", background: "transparent" }}
                         onMouseEnter={e => { e.currentTarget.style.background = "var(--color-background-secondary)"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
