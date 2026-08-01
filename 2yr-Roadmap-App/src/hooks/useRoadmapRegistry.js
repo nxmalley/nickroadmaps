@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { nickRoadmap } from '../data/nick-roadmap.js';
+import { financialRoadmap } from '../data/financial-roadmap.js';
+
+/** All bundled roadmaps — these load even without a backend. */
+const BUNDLED_ROADMAPS = [nickRoadmap, financialRoadmap];
 
 /**
  * Computes metadata summary for a single roadmap.
@@ -64,8 +68,8 @@ export function useRoadmapRegistry() {
           if (Array.isArray(data) && data.length > 0) {
             setRoadmaps(data);
           } else {
-            // Backend returned empty — use nickRoadmap as default
-            setRoadmaps([nickRoadmap]);
+            // Backend returned empty — use bundled roadmaps as default
+            setRoadmaps(BUNDLED_ROADMAPS);
           }
           setError(null);
           setLoading(false);
@@ -76,7 +80,7 @@ export function useRoadmapRegistry() {
           // bundled roadmap and operate in local-only mode. This is an
           // expected path when Upstash Redis isn't set up, so we don't surface
           // an error banner for it.
-          setRoadmaps([nickRoadmap]);
+          setRoadmaps(BUNDLED_ROADMAPS);
           setError(null);
           setLoading(false);
         }

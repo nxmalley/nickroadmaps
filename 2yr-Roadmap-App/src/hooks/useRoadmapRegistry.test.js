@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useRoadmapRegistry, computeRoadmapMeta } from './useRoadmapRegistry.js';
 import { nickRoadmap } from '../data/nick-roadmap.js';
+import { financialRoadmap } from '../data/financial-roadmap.js';
+
+const BUNDLED_ROADMAPS = [nickRoadmap, financialRoadmap];
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -130,7 +133,7 @@ describe('useRoadmapRegistry', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.roadmaps).toEqual([nickRoadmap]);
+    expect(result.current.roadmaps).toEqual(BUNDLED_ROADMAPS);
     expect(result.current.error).toBeNull();
   });
 
@@ -144,7 +147,7 @@ describe('useRoadmapRegistry', () => {
     });
 
     // No backend configured is an expected path — fall back without surfacing an error.
-    expect(result.current.roadmaps).toEqual([nickRoadmap]);
+    expect(result.current.roadmaps).toEqual(BUNDLED_ROADMAPS);
     expect(result.current.error).toBeNull();
   });
 
@@ -160,7 +163,7 @@ describe('useRoadmapRegistry', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.roadmaps).toEqual([nickRoadmap]);
+    expect(result.current.roadmaps).toEqual(BUNDLED_ROADMAPS);
     expect(result.current.error).toBeNull();
   });
 
