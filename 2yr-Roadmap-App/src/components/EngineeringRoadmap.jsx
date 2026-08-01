@@ -1,21 +1,18 @@
 import { useState } from "react";
+import { useProgressStore } from "../hooks/useProgressStore.js";
+import { nickRoadmap, NICK_ROADMAP_ID } from "../data/nick-roadmap.js";
 import { DEFAULT_TEXT_COLOR, DEFAULT_BG_COLOR } from "../constants/defaults.js";
 
 /**
- * Generic roadmap renderer. Accepts any data conforming to the RoadmapData schema
- * and renders phase navigation, week cards, and task rows.
- *
- * @param {object} props
- * @param {import('../types/roadmap.js').RoadmapData} props.roadmap - Full roadmap data
- * @param {Record<string, boolean>} props.progress - taskId -> completed mapping
- * @param {(taskId: string) => void} props.onToggleTask - Called when a task is toggled
- * @param {boolean} [props.editMode=false] - Whether edit mode is active
- * @param {(action: object) => void} [props.onEditAction] - Called for edit actions
+ * EngineeringRoadmap — standalone component for Nick's 2-Year Engineering Roadmap.
+ * All data comes from nick-roadmap.js. Progress state from useProgressStore.
+ * Receives NO props — fully self-contained.
  */
-export default function RoadmapView({ roadmap, progress, onToggleTask, editMode = false, onEditAction }) {
+export default function EngineeringRoadmap() {
+  const { progress, toggle } = useProgressStore(NICK_ROADMAP_ID);
   const [activePhaseIndex, setActivePhaseIndex] = useState(0);
 
-  const { phases, accentColors, categories } = roadmap;
+  const { phases, accentColors, categories, title, subtitle } = nickRoadmap;
 
   // Overall progress
   const allTasks = phases.flatMap(p => p.weeks.flatMap(w => w.tasks));
@@ -28,31 +25,23 @@ export default function RoadmapView({ roadmap, progress, onToggleTask, editMode 
   const phaseTasks = phase.weeks.flatMap(w => w.tasks);
   const phaseDone = phaseTasks.filter(t => progress[t.id]).length;
   const phaseTotal = phaseTasks.length;
-
-  // Accent color for the active phase (falls back to border token if not defined)
   const accent = accentColors[activePhaseIndex] || "var(--color-border-tertiary)";
 
-  /**
-   * Resolve category styling for a task.
-   * If the task's cat key is not in roadmap.categories, use defaults.
-   */
   function getCategoryStyle(catKey) {
     if (Object.hasOwn(categories, catKey)) {
       const catDef = categories[catKey];
       return { bg: catDef.bg, color: catDef.color, label: catDef.label };
     }
-    // Unknown category fallback (Req 3.7)
     return { bg: DEFAULT_BG_COLOR, color: DEFAULT_TEXT_COLOR, label: catKey };
   }
 
   return (
     <div style={{ padding: "1rem 0", fontFamily: "var(--font-sans)" }}>
-      {/* Title and subtitle */}
       <h2 style={{ fontSize: "18px", fontWeight: 500, margin: "0 0 3px", color: "var(--color-text-primary)" }}>
-        {roadmap.title}
+        {title}
       </h2>
       <p style={{ fontSize: "13px", color: "var(--color-text-secondary)", margin: "0 0 1rem" }}>
-        {roadmap.subtitle}
+        {subtitle}
       </p>
 
       {/* Overall progress bar */}
@@ -77,34 +66,23 @@ export default function RoadmapView({ roadmap, progress, onToggleTask, editMode 
               key={p.id}
               onClick={() => setActivePhaseIndex(i)}
               style={{
-                padding: "6px 14px",
-                borderRadius: "var(--border-radius-md)",
-                fontSize: "13px",
-                flexShrink: 0,
+                padding: "6px 14px", borderRadius: "var(--border-radius-md)", fontSize: "13px", flexShrink: 0,
                 border: `1px solid ${isActive ? phaseAccent : "var(--color-border-tertiary)"}`,
-                background: "transparent",
+                background: "transparent", cursor: "pointer", fontWeight: isActive ? 500 : 400,
                 color: isActive ? phaseAccent : "var(--color-text-secondary)",
-                cursor: "pointer",
-                fontWeight: isActive ? 500 : 400,
               }}
             >
               {p.title}
-              {phD > 0 && phD < phT.length && (
-                <span style={{ marginLeft: "6px", fontSize: "10px", opacity: 0.7 }}>{phD}/{phT.length}</span>
-              )}
-              {phD === phT.length && phT.length > 0 && (
-                <span style={{ marginLeft: "5px", fontSize: "11px" }}>✓</span>
-              )}
+              {phD > 0 && phD < phT.length && <span style={{ marginLeft: "6px", fontSize: "10px", opacity: 0.7 }}>{phD}/{phT.length}</span>}
+              {phD === phT.length && phT.length > 0 && <span style={{ marginLeft: "5px", fontSize: "11px" }}>✓</span>}
             </button>
           );
         })}
       </div>
 
-      {/* Phase header with accent border */}
+      {/* Phase header */}
       <div style={{ borderLeft: `3px solid ${accent}`, paddingLeft: "14px", marginBottom: "1.25rem" }}>
-        <p style={{ margin: 0, fontSize: "15px", fontWeight: 500, color: "var(--color-text-primary)" }}>
-          {phase.subtitle}
-        </p>
+        <p style={{ margin: 0, fontSize: "15px", fontWeight: 500, color: "var(--color-text-primary)" }}>{phase.subtitle}</p>
         <p style={{ margin: "2px 0 8px", fontSize: "12px", color: "var(--color-text-secondary)" }}>
           {phase.dateRange} · {phaseDone}/{phaseTotal} complete
         </p>
@@ -124,7 +102,6 @@ export default function RoadmapView({ roadmap, progress, onToggleTask, editMode 
           const wComplete = wDone === week.tasks.length;
           return (
             <div key={week.id} style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", overflow: "hidden" }}>
-              {/* Week header */}
               <div style={{ padding: "8px 14px", background: "var(--color-background-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--color-text-primary)" }}>{week.label}</span>
@@ -134,56 +111,30 @@ export default function RoadmapView({ roadmap, progress, onToggleTask, editMode 
                   {wDone}/{week.tasks.length}{wComplete ? " ✓" : ""}
                 </span>
               </div>
-
-              {/* Task rows */}
               {week.tasks.map((task) => {
                 const catStyle = getCategoryStyle(task.cat);
                 const isChecked = !!progress[task.id];
                 return (
                   <div
                     key={task.id}
-                    onClick={() => onToggleTask(task.id)}
+                    onClick={() => toggle(task.id)}
                     style={{ padding: "10px 14px", display: "flex", gap: "10px", alignItems: "flex-start", cursor: "pointer", borderTop: "0.5px solid var(--color-border-tertiary)", background: "transparent" }}
                     onMouseEnter={e => { e.currentTarget.style.background = "var(--color-background-secondary)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                   >
-                    {/* Checkbox with accent color */}
                     <div style={{
-                      width: "15px",
-                      height: "15px",
-                      borderRadius: "3px",
-                      flexShrink: 0,
-                      marginTop: "2px",
+                      width: "15px", height: "15px", borderRadius: "3px", flexShrink: 0, marginTop: "2px",
                       border: `1.5px solid ${isChecked ? accent : "var(--color-border-secondary)"}`,
                       background: isChecked ? accent : "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.15s",
+                      display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
                     }}>
                       {isChecked && <span style={{ fontSize: "10px", color: "white", lineHeight: 1 }}>✓</span>}
                     </div>
-
-                    {/* Category tag + task text */}
                     <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                      <span style={{
-                        fontSize: "10px",
-                        padding: "2px 6px",
-                        borderRadius: "3px",
-                        fontWeight: 500,
-                        flexShrink: 0,
-                        marginTop: "2px",
-                        background: catStyle.bg,
-                        color: catStyle.color,
-                      }}>
+                      <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "3px", fontWeight: 500, flexShrink: 0, marginTop: "2px", background: catStyle.bg, color: catStyle.color }}>
                         {catStyle.label}
                       </span>
-                      <span style={{
-                        fontSize: "13px",
-                        lineHeight: "1.55",
-                        color: isChecked ? "var(--color-text-tertiary)" : "var(--color-text-primary)",
-                        textDecoration: isChecked ? "line-through" : "none",
-                      }}>
+                      <span style={{ fontSize: "13px", lineHeight: "1.55", color: isChecked ? "var(--color-text-tertiary)" : "var(--color-text-primary)", textDecoration: isChecked ? "line-through" : "none" }}>
                         {task.text}
                       </span>
                     </div>
