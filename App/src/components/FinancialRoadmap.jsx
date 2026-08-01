@@ -178,7 +178,7 @@ export default function FinancialRoadmap() {
   const allTasks = PHASES.flatMap(p => p.groups.flatMap(g => g.tasks));
   const totalTasks = allTasks.length;
   const completedTasks = allTasks.filter(t => progress[t.id]).length;
-  const pct = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const pct = totalTasks ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0;
 
   // Active phase data
   const phase = PHASES[activePhase];
@@ -207,15 +207,35 @@ export default function FinancialRoadmap() {
         Jul 2026 – 2046 · Goal: $5,000,000 Net Worth
       </p>
 
-      {/* Overall progress bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "1.5rem" }}>
-        <div style={{ flex: 1, height: "5px", background: "var(--color-background-secondary)", borderRadius: "3px", overflow: "hidden" }}>
-          <div style={{ width: `${pct}%`, height: "100%", background: A[0], borderRadius: "3px", transition: "width 0.3s" }} />
-        </div>
-        <span style={{ fontSize: "12px", color: "var(--color-text-secondary)", flexShrink: 0 }}>
-          {completedTasks}/{totalTasks} · {pct}%
-        </span>
-      </div>
+      {/* Net worth progress — center of attention */}
+      {(() => {
+        const goal = 5000000;
+        const latestEntry = log[log.length - 1];
+        const currentNw = latestEntry ? parseFloat(String(latestEntry.netWorth).replace(/[^0-9.\-]/g, '')) || 0 : 0;
+        const nwPct = goal > 0 ? Math.max(0, Math.min(Math.round((currentNw / goal) * 1000) / 10, 100)) : 0;
+        const formattedNw = currentNw >= 0
+          ? `$${currentNw.toLocaleString()}`
+          : `-$${Math.abs(currentNw).toLocaleString()}`;
+        return (
+          <div style={{ marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+              <span style={{ fontSize: "20px", fontWeight: 600, color: "var(--color-text-primary)" }}>
+                {formattedNw}
+              </span>
+              <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
+                {completedTasks}/{totalTasks} tasks · {pct}%
+              </span>
+            </div>
+            <div style={{ height: "8px", background: "var(--color-background-secondary)", borderRadius: "4px", overflow: "hidden", marginBottom: "4px" }}>
+              <div style={{ width: `${nwPct}%`, height: "100%", background: "linear-gradient(90deg, #0F6E56, #185FA5)", borderRadius: "4px", transition: "width 0.3s" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--color-text-tertiary)" }}>
+              <span>{nwPct}% to goal</span>
+              <span>$5,000,000</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Phase tabs */}
       <div style={{ display: "flex", gap: "8px", marginBottom: "1rem", overflowX: "auto", paddingBottom: "4px" }}>

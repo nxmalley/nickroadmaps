@@ -31,7 +31,7 @@ function RoadmapSelector({ roadmaps, activeId, onSelect }) {
 
   function getCompletionPct(r) {
     if (!r.totalTasks) return 0;
-    return Math.round((r.completedTasks / r.totalTasks) * 100);
+    return Math.round((r.completedTasks / r.totalTasks) * 1000) / 10;
   }
 
   return (
@@ -166,7 +166,7 @@ function RoadmapSelector({ roadmaps, activeId, onSelect }) {
 function GlobalProgressSummary({ roadmaps }) {
   const totalTasks = roadmaps.reduce((sum, r) => sum + r.totalTasks, 0);
   const completedTasks = roadmaps.reduce((sum, r) => sum + r.completedTasks, 0);
-  const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0;
 
   return (
     <div

@@ -18,7 +18,7 @@ export default function EngineeringRoadmap() {
   const allTasks = phases.flatMap(p => p.weeks.flatMap(w => w.tasks));
   const totalTasks = allTasks.length;
   const completedTasks = allTasks.filter(t => progress[t.id]).length;
-  const pct = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const pct = totalTasks ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0;
 
   // Active phase data
   const phase = phases[activePhaseIndex];
