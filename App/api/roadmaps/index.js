@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { verifySession } from '../_middleware/auth.js';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -25,6 +26,11 @@ function generateId(title) {
  * POST → creates a new roadmap definition
  */
 export default async function handler(req, res) {
+  const authenticated = await verifySession(req);
+  if (!authenticated) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   try {
     if (req.method === 'GET') {
       const registry = await redis.get('roadmap:registry');

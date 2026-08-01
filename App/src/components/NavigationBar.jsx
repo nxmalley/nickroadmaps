@@ -198,7 +198,7 @@ function GlobalProgressSummary({ roadmaps }) {
  * @param {(id: string) => void} props.onSelect
  * @param {(viewMode: string) => void} [props.onNavigate]
  */
-export default function NavigationBar({ roadmaps, activeId, onSelect, onNavigate }) {
+export default function NavigationBar({ roadmaps, activeId, onSelect, onNavigate, onLogout }) {
   return (
     <nav
       style={{
@@ -244,6 +244,43 @@ export default function NavigationBar({ roadmaps, activeId, onSelect, onNavigate
           onSelect={onSelect}
         />
       </div>
+
+      {/* Right: Logout button */}
+      {onLogout && (
+        <button
+          type="button"
+          onClick={onLogout}
+          aria-label="Log out"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "6px 12px",
+            background: "transparent",
+            border: "1px solid var(--color-border-tertiary)",
+            borderRadius: "var(--border-radius-md)",
+            color: "var(--color-text-secondary)",
+            fontSize: "12px",
+            cursor: "pointer",
+            fontFamily: "var(--font-sans)",
+            transition: "color 0.15s, border-color 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--color-text-primary)";
+            e.currentTarget.style.borderColor = "var(--color-text-tertiary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--color-text-secondary)";
+            e.currentTarget.style.borderColor = "var(--color-border-tertiary)";
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M6 2a1 1 0 00-1 1v2a1 1 0 002 0V4h5v8H7v-1a1 1 0 00-2 0v2a1 1 0 001 1h6a1 1 0 001-1V3a1 1 0 00-1-1H6z"/>
+            <path d="M1.3 8.7a1 1 0 010-1.4l2-2a1 1 0 111.4 1.4L4.4 7H10a1 1 0 010 2H4.4l.3.3a1 1 0 01-1.4 1.4l-2-2z"/>
+          </svg>
+          Logout
+        </button>
+      )}
     </nav>
   );
 }

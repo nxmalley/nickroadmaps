@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { verifySession } from '../_middleware/auth.js';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -11,6 +12,11 @@ const redis = new Redis({
  * PUT  → updates the progress record with conflict resolution via updatedAt timestamp
  */
 export default async function handler(req, res) {
+  const authenticated = await verifySession(req);
+  if (!authenticated) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   const { roadmapId } = req.query;
 
   if (!roadmapId || typeof roadmapId !== 'string' || roadmapId.trim().length === 0) {

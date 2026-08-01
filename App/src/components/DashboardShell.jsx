@@ -60,7 +60,7 @@ const ROADMAP_COMPONENTS = {
  *   - activeRoadmapId (string | null): currently selected roadmap
  *   - viewMode ('landing' | 'view'): which content panel to show
  */
-export default function DashboardShell() {
+export default function DashboardShell({ onLogout }) {
   const [activeRoadmapId, setActiveRoadmapId] = useState(null);
   const [viewMode, setViewMode] = useState('landing');
 
@@ -154,6 +154,7 @@ export default function DashboardShell() {
         activeId={activeRoadmapId}
         onSelect={handleSelectRoadmap}
         onNavigate={handleGoHome}
+        onLogout={onLogout}
       />
 
       {registryError && (
