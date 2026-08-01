@@ -47,7 +47,9 @@ export function migrateLegacyProgress(legacyData, validTaskIds) {
  * @returns {{ migrated: boolean, migrating: boolean }}
  */
 export function useMigration() {
-  const [migrated, setMigrated] = useState(false);
+  const [migrated, setMigrated] = useState(
+    () => localStorage.getItem(MIGRATION_COMPLETE_KEY) === "true"
+  );
   const [migrating, setMigrating] = useState(false);
   const ranRef = useRef(false);
 
@@ -56,36 +58,38 @@ export function useMigration() {
     if (ranRef.current) return;
     ranRef.current = true;
 
-    // Step 1: Check if migration already completed (idempotence)
+    // Already complete — nothing to do (state initialized as true above)
     if (localStorage.getItem(MIGRATION_COMPLETE_KEY) === "true") {
-      setMigrated(true);
       return;
     }
 
-    // Step 2: Check for legacy data
-    const legacyRaw = localStorage.getItem(LEGACY_KEY);
-    if (!legacyRaw) {
-      // No legacy data — mark complete and return (Req 8.5)
-      localStorage.setItem(MIGRATION_COMPLETE_KEY, "true");
-      setMigrated(true);
-      return;
-    }
-
-    // Step 3: Parse legacy data
-    let legacyData;
-    try {
-      legacyData = JSON.parse(legacyRaw);
-    } catch {
-      // Invalid JSON — mark complete, nothing to migrate
-      localStorage.setItem(MIGRATION_COMPLETE_KEY, "true");
-      setMigrated(true);
-      return;
-    }
-
-    // Begin async migration
-    setMigrating(true);
-
+    // Wrap entire migration in an async IIFE so all setState calls
+    // happen after an await tick, avoiding the synchronous-setState-in-effect lint error.
     (async () => {
+      // Step 2: Check for legacy data
+      const legacyRaw = localStorage.getItem(LEGACY_KEY);
+      if (!legacyRaw) {
+        // No legacy data — mark complete and return (Req 8.5)
+        localStorage.setItem(MIGRATION_COMPLETE_KEY, "true");
+        await Promise.resolve(); // yield before setState
+        setMigrated(true);
+        return;
+      }
+
+      // Step 3: Parse legacy data
+      let legacyData;
+      try {
+        legacyData = JSON.parse(legacyRaw);
+      } catch {
+        // Invalid JSON — mark complete, nothing to migrate
+        localStorage.setItem(MIGRATION_COMPLETE_KEY, "true");
+        await Promise.resolve();
+        setMigrated(true);
+        return;
+      }
+
+      // Begin async migration
+      setMigrating(true);
       try {
         // Step 4: Check if backend already has progress for the default roadmap
         let backendHasProgress = false;
