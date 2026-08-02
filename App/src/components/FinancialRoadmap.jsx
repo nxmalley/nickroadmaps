@@ -105,10 +105,14 @@ const RULES = [
 ];
 
 const INITIAL_LOG = [
-  { date: "Jan 2025", netWorth: "-13,571", salary: "45,000", debt: "45,000", credit: "-" },
-  { date: "Jan 10 2026", netWorth: "7,000", salary: "45,000", debt: "27,000", credit: "785" },
-  { date: "Apr 10 2026", netWorth: "14,834", salary: "100,000", debt: "24,000", credit: "785" },
-  { date: "Jul 10 2026", netWorth: "27,129", salary: "100,000", debt: "15,206", credit: "770" },
+  { date: "Oct 2024", netWorth: "-10,465", salary: "35,800", debt: "35,899", credit: "-" },
+  { date: "Jan 2025", netWorth: "-13,571", salary: "35,800", debt: "42,508", credit: "-" },
+  { date: "Apr 2025", netWorth: "-9,153", salary: "43,700", debt: "40,695", credit: "-" },
+  { date: "Jul 2025", netWorth: "-7,566", salary: "43,700", debt: "39,152", credit: "-" },
+  { date: "Oct 2025", netWorth: "-3,103", salary: "43,700", debt: "37,380", credit: "-" },
+  { date: "Jan 2026", netWorth: "7,001", salary: "54,142", debt: "32,185", credit: "785" },
+  { date: "Apr 2026", netWorth: "14,834", salary: "54,142", debt: "24,570", credit: "785" },
+  { date: "Jul 2026", netWorth: "27,129", salary: "100,000", debt: "15,206", credit: "770" },
 ];
 
 const NW_STORAGE_KEY = "financial-roadmap-networth-log";
@@ -793,9 +797,37 @@ export default function FinancialRoadmap() {
   }
 
   function renderLog() {
+    const earningsByYear = [
+      { year: "2021", total: 5203.55 },
+      { year: "2022", total: 2721.34 },
+      { year: "2023", total: 6777.92 },
+      { year: "2024", total: 16038.13 },
+      { year: "2025", total: 41497.34 },
+      { year: "2026", total: 29981.69 },
+    ];
+    const lifetimeTotal = earningsByYear.reduce((sum, y) => sum + y.total, 0);
+
     return (
       <div>
         <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 16px" }}>Financial Breakdown History</h3>
+
+        {/* Lifetime Earnings */}
+        <div style={{ background: "#1e293b", borderRadius: "10px", border: "1px solid #334155", padding: "16px 18px", marginBottom: "24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "12px" }}>
+            <span style={{ fontSize: "13px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Lifetime Earnings</span>
+            <span style={{ fontSize: "20px", fontWeight: 700, color: "#4ade80" }}>${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
+            {earningsByYear.map(y => (
+              <div key={y.year} style={{ padding: "8px 10px", background: "#0f172a", borderRadius: "6px", textAlign: "center" }}>
+                <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>{y.year}</p>
+                <p style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0", margin: 0 }}>${y.total.toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Net Worth History Table */}
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
             <thead>
