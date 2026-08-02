@@ -201,7 +201,16 @@ export default function FinancialRoadmap() {
   const [earnedItems, setEarnedItems] = useState(() => {
     try {
       const raw = localStorage.getItem("financial-roadmap-earned");
-      return raw ? JSON.parse(raw) : [];
+      return raw ? JSON.parse(raw) : [
+        { id: "earn-suv", text: "Full Size SUV - Triple Matte or Satin Black", completed: false, completedAt: null },
+        { id: "earn-porsche", text: "Porsche 911", completed: false, completedAt: null },
+        { id: "earn-gshock", text: "G Shock: GM-2100BB-1A", completed: false, completedAt: null },
+        { id: "earn-tissot", text: "Tissot PRX Quartz (Steel and Black Dial)", completed: false, completedAt: null },
+        { id: "earn-seiko", text: "Seiko Alpinist SPB121", completed: false, completedAt: null },
+        { id: "earn-longines", text: "Longines: Master Collection Moonphase L2.919.4.78.3 (Brown Leather and White Dial) + Black Leather strap", completed: false, completedAt: null },
+        { id: "earn-tag", text: "Tag Heuer: Carrera Date WBN2111.BA0639 (Steel and Silver Dial)", completed: false, completedAt: null },
+        { id: "earn-rolex", text: "Rolex: Day-Date 40MM Everose Gold Slate Roman Ombre Dial 228235", completed: false, completedAt: null },
+      ];
     } catch {
       return [];
     }
@@ -863,6 +872,7 @@ export default function FinancialRoadmap() {
     function isYearLocked(year) {
       const data = earningsData[year];
       if (!data) return false;
+      if (year === "2021") return true;
       return data.Dec > 0 && year !== String(new Date().getFullYear());
     }
 
