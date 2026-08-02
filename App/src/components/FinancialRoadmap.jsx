@@ -150,25 +150,6 @@ const INITIAL_LOG = [
 
 const NW_STORAGE_KEY = "financial-roadmap-networth-log";
 
-const GROUP_ICONS = {
-  "Debt Elimination": "💰",
-  "Retirement": "📈",
-  "Move-Out Requirements (in order)": "🏠",
-  "CMA — Phase 1 (Foundation)": "📈",
-  "Admin & Housekeeping": "📋",
-  "Housing Transition": "🏠",
-  "CMA — Phase 2 (Sequential Growth Stocks)": "📈",
-  "Credit": "💳",
-  "Career": "🏢",
-  "Malnax": "🏢",
-  "CMA — Phase 3 (Rebalance)": "📈",
-  "Real Estate": "🏠",
-  "Lifestyle Milestones": "📋",
-  "Portfolio Maturity": "📈",
-  "Malnax / Business": "🏢",
-  "Net Worth Milestones": "📊",
-};
-
 /* ─── Component ─── */
 export default function FinancialRoadmap() {
   const { progress, toggle } = useProgressStore("financial-masterplan");
@@ -430,7 +411,6 @@ export default function FinancialRoadmap() {
                   const gDone = group.tasks.filter(t => progress[t.id]).length;
                   const gTotal = group.tasks.length;
                   const isCollapsed = !!collapsedGroups[group.id];
-                  const icon = GROUP_ICONS[group.label] || "📋";
                   return (
                     <div key={group.id} style={{ background: "#1e293b", borderRadius: "10px", border: "1px solid #334155", overflow: "hidden" }}>
                       {/* Group header */}
@@ -441,7 +421,6 @@ export default function FinancialRoadmap() {
                           cursor: "pointer", userSelect: "none",
                         }}
                       >
-                        <span style={{ fontSize: "16px" }}>{icon}</span>
                         <span style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", flex: 1 }}>{group.label}</span>
                         <span style={{ fontSize: "12px", color: gDone === gTotal ? "#4ade80" : "#94a3b8" }}>
                           {gDone}/{gTotal}
