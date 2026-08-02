@@ -119,6 +119,7 @@ export default function FinancialRoadmap() {
   const [activePhase, setActivePhase] = useState(0);
   const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "rules" | "history" | "accounts" | "future"
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [earnedTab, setEarnedTab] = useState("pending");
 
   // Net worth log — persisted separately in localStorage
   const [log, setLog] = useState(() => {
@@ -173,6 +174,17 @@ export default function FinancialRoadmap() {
     }
   });
 
+  // Earned rewards — lifestyle purchases earned through discipline
+  const [earnedItems, setEarnedItems] = useState(() => {
+    try {
+      const raw = localStorage.getItem("financial-roadmap-earned");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [earnedDraft, setEarnedDraft] = useState("");
+
   useEffect(() => {
     try {
       localStorage.setItem(NW_STORAGE_KEY, JSON.stringify(log));
@@ -190,6 +202,10 @@ export default function FinancialRoadmap() {
   useEffect(() => {
     try { localStorage.setItem("financial-roadmap-completed", JSON.stringify(completedArchive)); } catch { /* ignore */ }
   }, [completedArchive]);
+
+  useEffect(() => {
+    try { localStorage.setItem("financial-roadmap-earned", JSON.stringify(earnedItems)); } catch { /* ignore */ }
+  }, [earnedItems]);
 
   // Auto-archive fully completed groups
   useEffect(() => {
@@ -299,6 +315,22 @@ export default function FinancialRoadmap() {
     setAccounts(prev => prev.filter(a => a.id !== id));
   }
 
+  function addEarnedItem() {
+    if (!earnedDraft.trim()) return;
+    setEarnedItems(prev => [...prev, { id: `earn-${Date.now()}`, text: earnedDraft.trim(), completed: false, completedAt: null }]);
+    setEarnedDraft("");
+  }
+
+  function completeEarnedItem(id) {
+    setEarnedItems(prev => prev.map(item =>
+      item.id === id ? { ...item, completed: true, completedAt: new Date().toISOString() } : item
+    ));
+  }
+
+  function removeEarnedItem(id) {
+    setEarnedItems(prev => prev.filter(item => item.id !== id));
+  }
+
   // Donut chart math
   const donutRadius = 30;
   const donutCircumference = 2 * Math.PI * donutRadius;
@@ -327,6 +359,7 @@ export default function FinancialRoadmap() {
             { key: "history", label: "Financial Breakdown" },
             { key: "accounts", label: "Investments & Accounts" },
             { key: "rules", label: "Rules" },
+            { key: "earned", label: "Earned not Given 💯!" },
             { key: "future", label: "Future Implementation" },
           ].map(item => {
             const isActive = activeView === item.key;
@@ -570,6 +603,9 @@ export default function FinancialRoadmap() {
         {/* ═══ Future Implementation View (from sidebar) ═══ */}
         {activeView === "future" && renderFuture()}
 
+        {/* ═══ Earned not Given View (from sidebar) ═══ */}
+        {activeView === "earned" && renderEarned()}
+
         {/* ═══ Completed View (from task progress link) ═══ */}
         {activeView === "completed" && (
           <div>
@@ -605,6 +641,71 @@ export default function FinancialRoadmap() {
   );
 
   /* ─── Render helpers ─── */
+  function renderEarned() {
+    const pending = earnedItems.filter(item => !item.completed);
+    const completed = earnedItems.filter(item => item.completed);
+
+    return (
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 8px" }}>Earned not Given 💯!</h3>
+        <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 16px" }}>Lifestyle purchases earned through financial discipline. Check off when you gift it to yourself.</p>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", borderBottom: "1px solid #334155", paddingBottom: "8px" }}>
+          <button onClick={() => setEarnedTab("pending")} style={{ background: "none", border: "none", padding: "4px 0", fontSize: "13px", cursor: "pointer", color: earnedTab === "pending" ? "#4ade80" : "#94a3b8", fontWeight: earnedTab === "pending" ? 500 : 400, borderBottom: earnedTab === "pending" ? "2px solid #0F6E56" : "2px solid transparent", marginBottom: "-9px" }}>
+            Pending ({pending.length})
+          </button>
+          <button onClick={() => setEarnedTab("completed")} style={{ background: "none", border: "none", padding: "4px 0", fontSize: "13px", cursor: "pointer", color: earnedTab === "completed" ? "#4ade80" : "#94a3b8", fontWeight: earnedTab === "completed" ? 500 : 400, borderBottom: earnedTab === "completed" ? "2px solid #0F6E56" : "2px solid transparent", marginBottom: "-9px" }}>
+            Completed ({completed.length})
+          </button>
+        </div>
+
+        {earnedTab === "pending" && (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+              {pending.length === 0 && <p style={{ fontSize: "13px", color: "#64748b" }}>No pending rewards. Add something you are working toward.</p>}
+              {pending.map(item => (
+                <div key={item.id} style={{ padding: "12px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155", display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div
+                    onClick={() => completeEarnedItem(item.id)}
+                    style={{ width: "16px", height: "16px", borderRadius: "3px", border: "1.5px solid #475569", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: "13px", color: "#e2e8f0", flex: 1 }}>{item.text}</span>
+                  <button onClick={() => removeEarnedItem(item.id)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "14px", padding: "0 4px", flexShrink: 0 }}>×</button>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                value={earnedDraft}
+                onChange={e => setEarnedDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addEarnedItem(); }}
+                placeholder="Add a reward you're working toward..."
+                style={{ flex: 1, padding: "10px 14px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }}
+              />
+              <button onClick={addEarnedItem} style={{ padding: "10px 16px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "1px solid #0F6E56", background: "transparent", color: "#4ade80", cursor: "pointer" }}>Add</button>
+            </div>
+          </>
+        )}
+
+        {earnedTab === "completed" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {completed.length === 0 && <p style={{ fontSize: "13px", color: "#64748b" }}>Nothing completed yet. Keep grinding.</p>}
+            {completed.map(item => (
+              <div key={item.id} style={{ padding: "12px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155", display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "16px", height: "16px", borderRadius: "3px", border: "1.5px solid #0F6E56", background: "#0F6E56", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: "10px", color: "#fff" }}>✓</span>
+                </div>
+                <span style={{ fontSize: "13px", color: "#64748b", textDecoration: "line-through", flex: 1 }}>{item.text}</span>
+                <span style={{ fontSize: "11px", color: "#475569", flexShrink: 0 }}>{item.completedAt ? new Date(item.completedAt).toLocaleDateString() : ""}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function renderFuture() {
     return (
       <div>
