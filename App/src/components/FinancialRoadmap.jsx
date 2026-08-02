@@ -359,7 +359,6 @@ export default function FinancialRoadmap() {
             { key: "history", label: "Financial Breakdown" },
             { key: "accounts", label: "Investments & Accounts" },
             { key: "rules", label: "Rules" },
-            { key: "earned", label: "Earned not Given 💯!" },
             { key: "future", label: "Future Implementation" },
           ].map(item => {
             const isActive = activeView === item.key;
@@ -380,8 +379,20 @@ export default function FinancialRoadmap() {
         </nav>
 
         {/* Bottom section */}
-        <div style={{ padding: "0 16px", marginTop: "auto" }}>
-          <p style={{ fontSize: "11px", fontStyle: "italic", color: "#475569", margin: 0, lineHeight: 1.5 }}>
+        <div style={{ padding: "0 8px", marginTop: "auto" }}>
+          <button onClick={() => setActiveView("earned")} style={{
+            display: "flex", alignItems: "center",
+            padding: "10px 12px", borderRadius: "6px", border: "none",
+            background: activeView === "earned" ? "#1e293b" : "transparent",
+            color: activeView === "earned" ? "#4ade80" : "#94a3b8",
+            fontSize: "13px", fontWeight: activeView === "earned" ? 500 : 400,
+            cursor: "pointer", textAlign: "left", width: "100%",
+            borderLeft: activeView === "earned" ? "3px solid #0F6E56" : "3px solid transparent",
+            marginBottom: "12px",
+          }}>
+            <span>Earned not Given 💯!</span>
+          </button>
+          <p style={{ fontSize: "13px", fontStyle: "italic", color: "#64748b", margin: 0, lineHeight: 1.5, padding: "0 8px" }}>
             &ldquo;Discipline today, freedom tomorrow.&rdquo;
           </p>
         </div>
