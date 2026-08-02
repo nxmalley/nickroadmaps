@@ -154,8 +154,7 @@ const NW_STORAGE_KEY = "financial-roadmap-networth-log";
 export default function FinancialRoadmap() {
   const { progress, toggle } = useProgressStore("financial-masterplan");
   const [activePhase, setActivePhase] = useState(0);
-  const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "rules" | "history"
-  const [activeTab, setActiveTab] = useState("tasks"); // "tasks" | "rules" | "log"
+  const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "rules" | "history" | "accounts" | "future"
   const [collapsedGroups, setCollapsedGroups] = useState({});
 
   // Net worth log — persisted separately in localStorage
@@ -169,11 +168,88 @@ export default function FinancialRoadmap() {
   });
   const [logDraft, setLogDraft] = useState({ date: "", netWorth: "", salary: "", debt: "", credit: "" });
 
+  // Future Implementation notes — persisted in localStorage
+  const [futureNotes, setFutureNotes] = useState(() => {
+    try {
+      const raw = localStorage.getItem("financial-roadmap-future-notes");
+      return raw ? JSON.parse(raw) : [
+        { id: "fn1", text: "Backdoor Roth IRA — research contribution limits and conversion steps for high earners" },
+        { id: "fn2", text: "Mega Backdoor Roth 401k — check if Empower plan allows after-tax contributions + in-plan conversion" },
+      ];
+    } catch {
+      return [];
+    }
+  });
+  const [futureDraft, setFutureDraft] = useState("");
+
+  // Investments & Accounts data — persisted in localStorage
+  const [accounts, setAccounts] = useState(() => {
+    try {
+      const raw = localStorage.getItem("financial-roadmap-accounts");
+      return raw ? JSON.parse(raw) : [
+        { id: "acc1", name: "NFCU", type: "Checking/Savings", role: "Primary checking + high-yield savings. Direct deposit split. $12k max balance policy." },
+        { id: "acc2", name: "Empower", type: "Roth 401k", role: "Employer retirement plan. 6% contribution into Vanguard Institutional 500 Index Trust. Immediate vesting." },
+        { id: "acc3", name: "Fidelity", type: "Roth IRA + CMA", role: "Roth IRA in FXAIX. Cash Management Account (taxable brokerage) for VTI/SCHD/BRKB positions." },
+        { id: "acc4", name: "USAA", type: "Checking/Insurance", role: "Secondary checking for spending. Auto + renters insurance. $4k max balance policy." },
+        { id: "acc5", name: "Capital One", type: "Credit Card", role: "Quicksilver card — 1.5% cashback on everything. Backup card, low utilization target." },
+        { id: "acc6", name: "Robinhood", type: "Brokerage", role: "Legacy account — minimal holdings. Consider consolidating into Fidelity CMA." },
+      ];
+    } catch {
+      return [];
+    }
+  });
+  const [accountDraft, setAccountDraft] = useState({ name: "", type: "", role: "" });
+
+  // Completed/archived groups — persisted in localStorage
+  const [completedArchive, setCompletedArchive] = useState(() => {
+    try {
+      const raw = localStorage.getItem("financial-roadmap-completed");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     try {
       localStorage.setItem(NW_STORAGE_KEY, JSON.stringify(log));
     } catch { /* ignore */ }
   }, [log]);
+
+  useEffect(() => {
+    try { localStorage.setItem("financial-roadmap-future-notes", JSON.stringify(futureNotes)); } catch { /* ignore */ }
+  }, [futureNotes]);
+
+  useEffect(() => {
+    try { localStorage.setItem("financial-roadmap-accounts", JSON.stringify(accounts)); } catch { /* ignore */ }
+  }, [accounts]);
+
+  useEffect(() => {
+    try { localStorage.setItem("financial-roadmap-completed", JSON.stringify(completedArchive)); } catch { /* ignore */ }
+  }, [completedArchive]);
+
+  // Auto-archive fully completed groups
+  useEffect(() => {
+    PHASES.forEach(p => {
+      p.groups.forEach(group => {
+        const allDone = group.tasks.length > 0 && group.tasks.every(t => progress[t.id]);
+        if (allDone) {
+          setCompletedArchive(prev => {
+            if (prev.some(a => a.groupId === group.id)) return prev;
+            const timestamp = new Date().toISOString();
+            return [...prev, {
+              id: `arch-${group.id}-${Date.now()}`,
+              groupId: group.id,
+              groupLabel: group.label,
+              phaseTitle: `${p.title} — ${p.sub}`,
+              completedAt: timestamp,
+              tasks: group.tasks.map(t => ({ id: t.id, text: t.text, cat: t.cat, completedAt: timestamp })),
+            }];
+          });
+        }
+      });
+    });
+  }, [progress]);
 
   // Overall progress
   const allTasks = PHASES.flatMap(p => p.groups.flatMap(g => g.tasks));
@@ -188,7 +264,7 @@ export default function FinancialRoadmap() {
   const accent = A[activePhase] || A[0];
 
   // Net worth parsing helpers
-  const parseNw = (val) => parseFloat(String(val).replace(/[^0-9.\-]/g, "")) || 0;
+  const parseNw = (val) => parseFloat(String(val).replace(/[^0-9.\u002D]/g, "")) || 0;
   const latestEntry = log[log.length - 1];
   const currentNw = latestEntry ? parseNw(latestEntry.netWorth) : 0;
   const prevEntry = log.length >= 2 ? log[log.length - 2] : null;
@@ -227,6 +303,26 @@ export default function FinancialRoadmap() {
     setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
   }
 
+  function addFutureNote() {
+    if (!futureDraft.trim()) return;
+    setFutureNotes(prev => [...prev, { id: `fn-${Date.now()}`, text: futureDraft.trim() }]);
+    setFutureDraft("");
+  }
+
+  function removeFutureNote(id) {
+    setFutureNotes(prev => prev.filter(n => n.id !== id));
+  }
+
+  function addAccount() {
+    if (!accountDraft.name.trim()) return;
+    setAccounts(prev => [...prev, { id: `acc-${Date.now()}`, ...accountDraft }]);
+    setAccountDraft({ name: "", type: "", role: "" });
+  }
+
+  function removeAccount(id) {
+    setAccounts(prev => prev.filter(a => a.id !== id));
+  }
+
   // Donut chart math
   const donutRadius = 30;
   const donutCircumference = 2 * Math.PI * donutRadius;
@@ -252,8 +348,10 @@ export default function FinancialRoadmap() {
         <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", padding: "16px 8px 0" }}>
           {[
             { key: "dashboard", label: "Dashboard" },
-            { key: "history", label: "Financial Breakdown History" },
+            { key: "history", label: "Financial Breakdown" },
+            { key: "accounts", label: "Investments & Accounts" },
             { key: "rules", label: "Rules" },
+            { key: "future", label: "Future Implementation" },
           ].map(item => {
             const isActive = activeView === item.key;
             return (
@@ -370,9 +468,12 @@ export default function FinancialRoadmap() {
                 <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 10px" }}>
                   {totalTasks ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0}% complete
                 </p>
-                <div style={{ height: "3px", background: "#334155", borderRadius: "2px", overflow: "hidden" }}>
+                <div style={{ height: "3px", background: "#334155", borderRadius: "2px", overflow: "hidden", marginBottom: "10px" }}>
                   <div style={{ width: `${totalTasks ? (completedTasks / totalTasks) * 100 : 0}%`, height: "100%", background: "#0F6E56", borderRadius: "2px", transition: "width 0.3s" }} />
                 </div>
+                <button onClick={() => setActiveView("completed")} style={{ background: "none", border: "none", padding: 0, fontSize: "11px", color: "#4ade80", cursor: "pointer", textDecoration: "underline" }}>
+                  View completed →
+                </button>
               </div>
             </div>
 
@@ -483,11 +584,104 @@ export default function FinancialRoadmap() {
 
         {/* ═══ History View (from sidebar) ═══ */}
         {activeView === "history" && renderLog()}
+
+        {/* ═══ Accounts View (from sidebar) ═══ */}
+        {activeView === "accounts" && renderAccounts()}
+
+        {/* ═══ Future Implementation View (from sidebar) ═══ */}
+        {activeView === "future" && renderFuture()}
+
+        {/* ═══ Completed View (from task progress link) ═══ */}
+        {activeView === "completed" && (
+          <div>
+            <button onClick={() => setActiveView("dashboard")} style={{ background: "none", border: "none", padding: 0, fontSize: "13px", color: "#4ade80", cursor: "pointer", marginBottom: "16px" }}>
+              ← Back to Dashboard
+            </button>
+            <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 16px" }}>Completed</h3>
+            {completedArchive.length === 0 ? (
+              <p style={{ fontSize: "13px", color: "#64748b" }}>No completed groups yet. When all tasks in a group are checked off, it will appear here with a timestamp.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {completedArchive.map(entry => (
+                  <div key={entry.id} style={{ padding: "14px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 500, color: "#4ade80" }}>{entry.groupLabel}</span>
+                      <span style={{ fontSize: "11px", color: "#64748b" }}>{new Date(entry.completedAt).toLocaleDateString()}</span>
+                    </div>
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px" }}>{entry.phaseTitle}</p>
+                    {entry.tasks.map(t => (
+                      <div key={t.id} style={{ display: "flex", gap: "8px", alignItems: "flex-start", padding: "4px 0" }}>
+                        <span style={{ fontSize: "10px", color: "#4ade80" }}>✓</span>
+                        <span style={{ fontSize: "12px", color: "#94a3b8", textDecoration: "line-through" }}>{t.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
 
   /* ─── Render helpers ─── */
+  function renderFuture() {
+    return (
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 16px" }}>Future Implementation</h3>
+        <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 16px" }}>Ideas and strategies to research and implement later.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+          {futureNotes.map(note => (
+            <div key={note.id} style={{ padding: "12px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+              <span style={{ fontSize: "13px", color: "#e2e8f0", flex: 1, lineHeight: 1.5 }}>{note.text}</span>
+              <button onClick={() => removeFutureNote(note.id)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "14px", padding: "0 4px", flexShrink: 0 }}>×</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input
+            value={futureDraft}
+            onChange={e => setFutureDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") addFutureNote(); }}
+            placeholder="Type a new idea or strategy to look into..."
+            style={{ flex: 1, padding: "10px 14px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }}
+          />
+          <button onClick={addFutureNote} style={{ padding: "10px 16px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "1px solid #0F6E56", background: "transparent", color: "#4ade80", cursor: "pointer" }}>Add</button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderAccounts() {
+    return (
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 16px" }}>Investments & Accounts</h3>
+        <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 16px" }}>All current financial accounts and their roles.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+          {accounts.map(acc => (
+            <div key={acc.id} style={{ padding: "14px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
+                  <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "4px", background: "#334155", color: "#94a3b8" }}>{acc.type}</span>
+                </div>
+                <button onClick={() => removeAccount(acc.id)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "14px", padding: "0 4px" }}>×</button>
+              </div>
+              <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0, lineHeight: 1.5 }}>{acc.role}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <input value={accountDraft.name} onChange={e => setAccountDraft(prev => ({ ...prev, name: e.target.value }))} placeholder="Account name" style={{ width: "120px", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }} />
+          <input value={accountDraft.type} onChange={e => setAccountDraft(prev => ({ ...prev, type: e.target.value }))} placeholder="Type (e.g. Roth IRA)" style={{ width: "140px", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }} />
+          <input value={accountDraft.role} onChange={e => setAccountDraft(prev => ({ ...prev, role: e.target.value }))} placeholder="Role / description" style={{ flex: 1, minWidth: "200px", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }} />
+          <button onClick={addAccount} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "1px solid #0F6E56", background: "transparent", color: "#4ade80", cursor: "pointer" }}>Add</button>
+        </div>
+      </div>
+    );
+  }
+
   function renderRules() {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
