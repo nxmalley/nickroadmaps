@@ -25,20 +25,16 @@ const PHASES = [
     groups: [
       { id: "p1g1", label: "Debt Elimination", tasks: [
         { id: "p1g1a", cat: "debt", text: "Direct all excess cash above NFCU ($12k) / USAA ($4k) maxes to student loan principal every month" },
-        { id: "p1g1b", cat: "debt", text: "Hard deadline: mass payoff of any remaining balance by Dec 1, 2026 regardless of pace" },
-        { id: "p1g1c", cat: "debt", text: "Confirm $0 balance and close out loan servicing account" },
+        { id: "p1g1b", cat: "debt", text: "Confirm $0 balance and close out loan servicing account" },
       ]},
       { id: "p1g2", label: "Retirement", tasks: [
-        { id: "p1g2a", cat: "roth", text: "Max 2026 Roth IRA ($7,000 total) in FXAIX once debt is cleared" },
         { id: "p1g2b", cat: "k401", text: "Roth 401k active at 6% into Vanguard Institutional 500 Index Trust A — confirmed immediate vesting" },
-        { id: "p1g2c", cat: "roth", text: "Begin 2027 Roth IRA contributions, target $3k+ before move-out" },
         { id: "p1g2d", cat: "k401", text: "Add beneficiaries to Roth 401k (Empower) and Roth IRA (Fidelity) — parents 50/50 primary" },
       ]},
       { id: "p1g3", label: "Move-Out Requirements (in order)", tasks: [
         { id: "p1g3a", cat: "moveout", text: "1. Student loans fully paid off" },
         { id: "p1g3b", cat: "moveout", text: "2. Roth IRA maxed for 2026 + $3k contributed to 2027" },
         { id: "p1g3c", cat: "moveout", text: "3. HYSA at $15k e-fund + $5k move-in fund ($20k total)" },
-        { id: "p1g3d", cat: "moveout", text: "4. Net worth reaches $100,000" },
       ]},
       { id: "p1g4", label: "CMA — Phase 1 (Foundation)", tasks: [
         { id: "p1g4a", cat: "cma", text: "Continue $382/mo \"pay myself\" split evenly BRKB / SCHD on the 15th" },
@@ -471,7 +467,7 @@ export default function FinancialRoadmap() {
                 <div style={{ height: "3px", background: "#334155", borderRadius: "2px", overflow: "hidden", marginBottom: "10px" }}>
                   <div style={{ width: `${totalTasks ? (completedTasks / totalTasks) * 100 : 0}%`, height: "100%", background: "#0F6E56", borderRadius: "2px", transition: "width 0.3s" }} />
                 </div>
-                <button onClick={() => setActiveView("completed")} style={{ background: "none", border: "none", padding: 0, fontSize: "11px", color: "#4ade80", cursor: "pointer", textDecoration: "underline" }}>
+                <button onClick={() => setActiveView("completed")} style={{ background: "none", border: "none", padding: 0, fontSize: "11px", color: "#4ade80", cursor: "pointer", textDecoration: "none" }}>
                   View completed →
                 </button>
               </div>
