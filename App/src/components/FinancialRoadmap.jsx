@@ -267,26 +267,17 @@ export default function FinancialRoadmap() {
         height: "100vh",
         overflowY: "auto",
       }}>
-        {/* Logo */}
-        <div style={{ padding: "0 16px", marginBottom: "28px" }}>
-          <div style={{
-            width: "32px", height: "32px", borderRadius: "50%",
-            background: "#0F6E56", display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: "14px", fontWeight: 700, color: "#fff",
-          }}>N</div>
-        </div>
-
         {/* Nav items */}
-        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", padding: "0 8px" }}>
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", padding: "16px 8px 0" }}>
           {[
-            { key: "dashboard", label: "Dashboard", icon: "◻" },
-            { key: "rules", label: "Rules", icon: "☰" },
-            { key: "history", label: "Financial Breakdown History", icon: "📊" },
+            { key: "dashboard", label: "Dashboard" },
+            { key: "history", label: "Financial Breakdown History" },
+            { key: "rules", label: "Rules" },
           ].map(item => {
             const isActive = activeView === item.key;
             return (
               <button key={item.key} onClick={() => setActiveView(item.key)} style={{
-                display: "flex", alignItems: "center", gap: "10px",
+                display: "flex", alignItems: "center",
                 padding: "10px 12px", borderRadius: "6px", border: "none",
                 background: isActive ? "#1e293b" : "transparent",
                 color: isActive ? "#4ade80" : "#94a3b8",
@@ -294,7 +285,6 @@ export default function FinancialRoadmap() {
                 cursor: "pointer", textAlign: "left", width: "100%",
                 borderLeft: isActive ? "3px solid #0F6E56" : "3px solid transparent",
               }}>
-                <span style={{ fontSize: "14px" }}>{item.icon}</span>
                 <span>{item.label}</span>
               </button>
             );
@@ -303,22 +293,9 @@ export default function FinancialRoadmap() {
 
         {/* Bottom section */}
         <div style={{ padding: "0 16px", marginTop: "auto" }}>
-          <p style={{ fontSize: "11px", fontStyle: "italic", color: "#475569", margin: "0 0 16px", lineHeight: 1.5 }}>
+          <p style={{ fontSize: "11px", fontStyle: "italic", color: "#475569", margin: 0, lineHeight: 1.5 }}>
             &ldquo;Discipline today, freedom tomorrow.&rdquo;
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-            <div style={{
-              width: "24px", height: "24px", borderRadius: "50%",
-              background: "#334155", display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: "11px", fontWeight: 600, color: "#e2e8f0",
-            }}>N</div>
-            <span style={{ fontSize: "12px", color: "#e2e8f0", flex: 1 }}>Nick</span>
-            <span style={{ fontSize: "10px", color: "#64748b" }}>›</span>
-          </div>
-          <button style={{
-            background: "none", border: "none", padding: 0,
-            fontSize: "11px", color: "#64748b", cursor: "pointer",
-          }}>Logout</button>
         </div>
       </aside>
 
@@ -390,10 +367,9 @@ export default function FinancialRoadmap() {
                     position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%, -50%)",
                     fontSize: "13px", fontWeight: 600, color: "#f1f5f9",
-                  }}>{goalPct.toFixed(1)}%</span>
+                  }}>{goalPct.toFixed(2)}%</span>
                 </div>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "10px 0 2px" }}>{completedTasks} / {totalTasks} tasks</p>
-                <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>$5,000,000 goal</p>
+                <p style={{ fontSize: "13px", color: "#64748b", margin: "10px 0 0" }}>$5,000,000 goal</p>
               </div>
 
               {/* Card 3: Current Phase */}
@@ -406,11 +382,16 @@ export default function FinancialRoadmap() {
                 </div>
               </div>
 
-              {/* Card 4: Time Horizon */}
+              {/* Card 4: Task Progress */}
               <div style={{ background: "#1e293b", borderRadius: "10px", padding: "16px 18px", border: "1px solid #334155" }}>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Time Horizon</p>
-                <p style={{ fontSize: "24px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px" }}>20 Years</p>
-                <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>Jul 2026 – Jul 2046</p>
+                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Task Progress</p>
+                <p style={{ fontSize: "24px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px" }}>{completedTasks}/{totalTasks}</p>
+                <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 10px" }}>
+                  {totalTasks ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0}% complete
+                </p>
+                <div style={{ height: "3px", background: "#334155", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ width: `${totalTasks ? (completedTasks / totalTasks) * 100 : 0}%`, height: "100%", background: "#0F6E56", borderRadius: "2px", transition: "width 0.3s" }} />
+                </div>
               </div>
             </div>
 
@@ -443,29 +424,8 @@ export default function FinancialRoadmap() {
               })}
             </div>
 
-            {/* Content Tabs within dashboard */}
-            <div style={{ display: "flex", gap: "16px", marginBottom: "20px", borderBottom: "1px solid #334155", paddingBottom: "8px" }}>
-              {[
-                { key: "tasks", label: "Tasks" },
-                { key: "rules", label: "Rules" },
-                { key: "log", label: "Net Worth Log" },
-              ].map(tab => (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-                  background: "none", border: "none", padding: "4px 0",
-                  fontSize: "13px", cursor: "pointer",
-                  color: activeTab === tab.key ? "#4ade80" : "#94a3b8",
-                  fontWeight: activeTab === tab.key ? 500 : 400,
-                  borderBottom: activeTab === tab.key ? `2px solid ${accent}` : "2px solid transparent",
-                  marginBottom: "-9px",
-                }}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* ═══ Tasks Sub-Tab ═══ */}
-            {activeTab === "tasks" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {/* ═══ Tasks ═══ */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {phase.groups.map((group) => {
                   const gDone = group.tasks.filter(t => progress[t.id]).length;
                   const gTotal = group.tasks.length;
@@ -536,13 +496,6 @@ export default function FinancialRoadmap() {
                   );
                 })}
               </div>
-            )}
-
-            {/* ═══ Rules Sub-Tab (inside dashboard) ═══ */}
-            {activeTab === "rules" && renderRules()}
-
-            {/* ═══ Net Worth Log Sub-Tab (inside dashboard) ═══ */}
-            {activeTab === "log" && renderLog()}
           </>
         )}
 
