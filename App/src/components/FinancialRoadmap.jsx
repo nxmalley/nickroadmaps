@@ -124,6 +124,25 @@ export default function FinancialRoadmap() {
   const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "rules" | "history" | "accounts" | "future"
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [earnedTab, setEarnedTab] = useState("pending");
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [expandedYear, setExpandedYear] = useState(null);
+
+  // Monthly earnings data — persisted in localStorage
+  const [earningsData, setEarningsData] = useState(() => {
+    try {
+      const raw = localStorage.getItem("financial-roadmap-earnings");
+      return raw ? JSON.parse(raw) : {
+        "2021": { Jan: 617.44, Feb: 658.67, Mar: 515.26, Apr: 768.48, May: 1050.72, Jun: 769.37, Jul: 281.29, Aug: 542.32, Sep: 0, Oct: 0, Nov: 0, Dec: 0 },
+        "2022": { Jan: 0, Feb: 348.00, Mar: 0, Apr: 99.79, May: 382.69, Jun: 514.73, Jul: 510.46, Aug: 808.11, Sep: 0, Oct: 0, Nov: 0, Dec: 57.56 },
+        "2023": { Jan: 292.89, Feb: 87.05, Mar: 136.23, Apr: 0, May: 0, Jun: 0, Jul: 1331.26, Aug: 4410.78, Sep: 488.66, Oct: 0, Nov: 0, Dec: 31.05 },
+        "2024": { Jan: 39.62, Feb: 16.99, Mar: 1589.00, Apr: 0, May: 741.63, Jun: 505.44, Jul: 1381.74, Aug: 2063.65, Sep: 2341.34, Oct: 2453.22, Nov: 2452.78, Dec: 2452.72 },
+        "2025": { Jan: 2456.48, Feb: 2457.32, Mar: 3781.18, Apr: 2522.78, May: 3266.86, Jun: 3297.26, Jul: 3298.37, Aug: 3010.09, Sep: 3298.37, Oct: 5297.09, Nov: 3675.02, Dec: 5136.52 },
+        "2026": { Jan: 3568.24, Feb: 3939.40, Mar: 6194.06, Apr: 6011.25, May: 5059.40, Jun: 5209.34, Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0 },
+      };
+    } catch {
+      return {};
+    }
+  });
 
   // Net worth log — persisted separately in localStorage
   const [log, setLog] = useState(() => {
@@ -210,6 +229,10 @@ export default function FinancialRoadmap() {
   useEffect(() => {
     try { localStorage.setItem("financial-roadmap-earned", JSON.stringify(earnedItems)); } catch { /* ignore */ }
   }, [earnedItems]);
+
+  useEffect(() => {
+    try { localStorage.setItem("financial-roadmap-earnings", JSON.stringify(earningsData)); } catch { /* ignore */ }
+  }, [earningsData]);
 
   // Auto-archive fully completed groups
   useEffect(() => {
@@ -427,31 +450,67 @@ export default function FinancialRoadmap() {
                     {nwDelta >= 0 ? "+" : "-"}${Math.abs(nwDelta).toLocaleString()} this month
                   </p>
                 )}
-                {/* Sparkline */}
-                <svg width={sparkW} height={sparkH} style={{ display: "block", marginTop: "6px" }}>
-                  <defs>
-                    <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0F6E56" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#0F6E56" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  {nwValues.length > 1 && (
-                    <>
-                      <polygon
-                        points={`0,${sparkH} ${sparkPoints} ${sparkW},${sparkH}`}
-                        fill="url(#sparkFill)"
-                      />
-                      <polyline
-                        points={sparkPoints}
-                        fill="none"
-                        stroke="#0F6E56"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </>
+                {/* Interactive Sparkline */}
+                <div style={{ position: "relative", marginTop: "6px" }}>
+                  <svg width={sparkW} height={sparkH} style={{ display: "block" }}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                  >
+                    <defs>
+                      <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#0F6E56" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#0F6E56" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {nwValues.length > 1 && (
+                      <>
+                        <polygon
+                          points={`0,${sparkH} ${sparkPoints} ${sparkW},${sparkH}`}
+                          fill="url(#sparkFill)"
+                        />
+                        <polyline
+                          points={sparkPoints}
+                          fill="none"
+                          stroke="#0F6E56"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        {nwValues.map((v, i) => {
+                          const x = nwValues.length > 1 ? (i / (nwValues.length - 1)) * sparkW : sparkW / 2;
+                          const y = sparkH - ((v - minNw) / nwRange) * (sparkH - 4) - 2;
+                          return (
+                            <circle
+                              key={i}
+                              cx={x}
+                              cy={y}
+                              r={hoveredPoint === i ? 4 : 2.5}
+                              fill={hoveredPoint === i ? "#4ade80" : "#0F6E56"}
+                              stroke={hoveredPoint === i ? "#fff" : "none"}
+                              strokeWidth="1.5"
+                              style={{ cursor: "pointer", transition: "r 0.1s" }}
+                              onMouseEnter={() => setHoveredPoint(i)}
+                            />
+                          );
+                        })}
+                      </>
+                    )}
+                  </svg>
+                  {hoveredPoint !== null && log[hoveredPoint] && (
+                    <div style={{
+                      position: "absolute", bottom: `${sparkH + 4}px`,
+                      left: `${nwValues.length > 1 ? (hoveredPoint / (nwValues.length - 1)) * sparkW : sparkW / 2}px`,
+                      transform: "translateX(-50%)",
+                      background: "#334155", borderRadius: "6px", padding: "6px 10px",
+                      fontSize: "11px", color: "#f1f5f9", whiteSpace: "nowrap",
+                      pointerEvents: "none", zIndex: 10, border: "1px solid #475569",
+                    }}>
+                      <div style={{ fontWeight: 600 }}>{log[hoveredPoint].date}</div>
+                      <div style={{ color: nwValues[hoveredPoint] >= 0 ? "#4ade80" : "#f87171" }}>
+                        {nwValues[hoveredPoint] >= 0 ? "$" : "-$"}{Math.abs(nwValues[hoveredPoint]).toLocaleString()}
+                      </div>
+                    </div>
                   )}
-                </svg>
+                </div>
               </div>
 
               {/* Card 2: Overall Progress (donut) */}
@@ -797,15 +856,23 @@ export default function FinancialRoadmap() {
   }
 
   function renderLog() {
-    const earningsByYear = [
-      { year: "2021", total: 5203.55 },
-      { year: "2022", total: 2721.34 },
-      { year: "2023", total: 6777.92 },
-      { year: "2024", total: 16038.13 },
-      { year: "2025", total: 41497.34 },
-      { year: "2026", total: 29981.69 },
-    ];
-    const lifetimeTotal = earningsByYear.reduce((sum, y) => sum + y.total, 0);
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const years = Object.keys(earningsData).sort();
+    const lifetimeTotal = years.reduce((sum, y) => sum + Object.values(earningsData[y]).reduce((s, v) => s + (v || 0), 0), 0);
+
+    function isYearLocked(year) {
+      const data = earningsData[year];
+      if (!data) return false;
+      return data.Dec > 0 && year !== String(new Date().getFullYear());
+    }
+
+    function updateMonth(year, month, value) {
+      const num = parseFloat(value) || 0;
+      setEarningsData(prev => ({
+        ...prev,
+        [year]: { ...prev[year], [month]: num },
+      }));
+    }
 
     return (
       <div>
@@ -818,13 +885,55 @@ export default function FinancialRoadmap() {
             <span style={{ fontSize: "20px", fontWeight: 700, color: "#4ade80" }}>${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
-            {earningsByYear.map(y => (
-              <div key={y.year} style={{ padding: "8px 10px", background: "#0f172a", borderRadius: "6px", textAlign: "center" }}>
-                <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>{y.year}</p>
-                <p style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0", margin: 0 }}>${y.total.toLocaleString()}</p>
-              </div>
-            ))}
+            {years.map(year => {
+              const yearTotal = Object.values(earningsData[year]).reduce((s, v) => s + (v || 0), 0);
+              const isExpanded = expandedYear === year;
+              const locked = isYearLocked(year);
+              return (
+                <div key={year}
+                  onClick={() => setExpandedYear(isExpanded ? null : year)}
+                  style={{ padding: "8px 10px", background: isExpanded ? "#334155" : "#0f172a", borderRadius: "6px", textAlign: "center", cursor: "pointer", border: isExpanded ? "1px solid #475569" : "1px solid transparent", transition: "background 0.15s" }}
+                >
+                  <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>{year}{locked ? " 🔒" : ""}</p>
+                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0", margin: 0 }}>${yearTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                </div>
+              );
+            })}
           </div>
+
+          {/* Expanded year monthly breakdown */}
+          {expandedYear && earningsData[expandedYear] && (
+            <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #334155" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9" }}>{expandedYear} Monthly Breakdown</span>
+                {isYearLocked(expandedYear) && <span style={{ fontSize: "11px", color: "#64748b" }}>Read only</span>}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+                {MONTHS.map(month => {
+                  const value = earningsData[expandedYear][month] || 0;
+                  const locked = isYearLocked(expandedYear);
+                  return (
+                    <div key={month} style={{ padding: "8px", background: "#0f172a", borderRadius: "6px" }}>
+                      <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 4px", textTransform: "uppercase" }}>{month}</p>
+                      {locked ? (
+                        <p style={{ fontSize: "12px", fontWeight: 500, color: value > 0 ? "#e2e8f0" : "#475569", margin: 0 }}>
+                          {value > 0 ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
+                        </p>
+                      ) : (
+                        <input
+                          type="number"
+                          value={value || ""}
+                          onChange={e => updateMonth(expandedYear, month, e.target.value)}
+                          placeholder="0.00"
+                          style={{ width: "100%", padding: "4px 6px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#1e293b", color: "#e2e8f0", boxSizing: "border-box" }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Net Worth History Table */}
