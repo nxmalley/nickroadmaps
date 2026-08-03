@@ -174,18 +174,18 @@ export default function FinancialRoadmap() {
     try {
       const raw = localStorage.getItem("financial-roadmap-accounts");
       return raw ? JSON.parse(raw) : [
-        { id: "acc1", name: "NFCU", type: "Checking/Savings", role: "Primary checking + high-yield savings. Direct deposit split. $12k max balance policy." },
-        { id: "acc2", name: "Empower", type: "Roth 401k", role: "Employer retirement plan. 6% contribution into Vanguard Institutional 500 Index Trust. Immediate vesting." },
-        { id: "acc3", name: "Fidelity", type: "Roth IRA + CMA", role: "Roth IRA in FXAIX. Cash Management Account (taxable brokerage) for VTI/SCHD/BRKB positions." },
-        { id: "acc4", name: "USAA", type: "Checking/Insurance", role: "Secondary checking for spending. Auto + renters insurance. $4k max balance policy." },
-        { id: "acc5", name: "Capital One", type: "Credit Card", role: "Quicksilver card — 1.5% cashback on everything. Backup card, low utilization target." },
-        { id: "acc6", name: "Robinhood", type: "Brokerage", role: "Legacy account — minimal holdings. Consider consolidating into Fidelity CMA." },
+        { id: "acc1", name: "NFCU", type: "Savings", badge: "savings", balance: 16625, limit: 12000, description: "High-yield savings. Credit card paid in full on 19th monthly.", metric: "limit", metricLabel: "of $12,000 limit" },
+        { id: "acc2", name: "USAA", type: "Savings", badge: "savings", balance: 25, limit: 4000, description: "Minimum balance to keep account open. Bills only.", metric: "limit", metricLabel: "of $4,000 limit" },
+        { id: "acc3", name: "Empower", type: "Roth 401k", badge: "retirement", balance: 1868, contribution: "6%", fund: "Vanguard Inst'l 500 Index Trust", vested: "100%", description: "Leidos employer plan. Immediate vesting.", metric: "contribution" },
+        { id: "acc4", name: "Fidelity", type: "Roth IRA", badge: "retirement", balance: 10704, fund: "FXAIX", returnPct: 8.72, description: "Roth IRA — S&P 500 index fund.", metric: "return" },
+        { id: "acc5", name: "Fidelity", type: "CMA (Taxable)", badge: "brokerage", balance: 4504, fund: "BRKB, SCHD + 4 more", monthlyContribution: 382, description: "Cash Management Account. $382/mo split evenly BRKB/SCHD.", metric: "contribution_monthly" },
+        { id: "acc6", name: "Capital One", type: "HYSA", badge: "savings", balance: 603, apy: "4.35%", description: "High-yield savings. 360 Performance.", metric: "apy" },
+        { id: "acc7", name: "Robinhood", type: "Crypto (Speculative)", badge: "speculative", balance: 531, fund: "DOGE, XRP", returnPct: 12.41, description: "Speculative crypto holdings.", metric: "return" },
       ];
     } catch {
       return [];
     }
   });
-  const [accountDraft, setAccountDraft] = useState({ name: "", type: "", role: "" });
 
   // Completed/archived groups — persisted in localStorage
   const [completedArchive, setCompletedArchive] = useState(() => {
@@ -339,12 +339,6 @@ export default function FinancialRoadmap() {
 
   function removeFutureNote(id) {
     setFutureNotes(prev => prev.filter(n => n.id !== id));
-  }
-
-  function addAccount() {
-    if (!accountDraft.name.trim()) return;
-    setAccounts(prev => [...prev, { id: `acc-${Date.now()}`, ...accountDraft }]);
-    setAccountDraft({ name: "", type: "", role: "" });
   }
 
   function removeAccount(id) {
@@ -817,29 +811,167 @@ export default function FinancialRoadmap() {
   }
 
   function renderAccounts() {
+    const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
+    const retirementTotal = accounts.filter(a => a.badge === "retirement").reduce((s, a) => s + (a.balance || 0), 0);
+    const investmentTotal = accounts.filter(a => a.badge === "brokerage" || a.badge === "speculative").reduce((s, a) => s + (a.balance || 0), 0);
+    const cashTotal = accounts.filter(a => a.badge === "savings").reduce((s, a) => s + (a.balance || 0), 0);
+    const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
+
+    const badgeColors = { savings: "#fbbf24", retirement: "#34d399", brokerage: "#60a5fa", speculative: "#f87171" };
+    const badgeLabels = { savings: "Savings", retirement: "Retirement", brokerage: "Brokerage", speculative: "Speculative" };
+
+    function updateAccountBalance(id, value) {
+      const num = parseFloat(value) || 0;
+      setAccounts(prev => prev.map(a => a.id === id ? { ...a, balance: num } : a));
+    }
+
+    // Allocation donut
+    const allocData = [
+      { label: "Retirement", value: retirementTotal, color: "#34d399" },
+      { label: "Investments", value: investmentTotal, color: "#60a5fa" },
+      { label: "Cash & Savings", value: cashTotal, color: "#fbbf24" },
+    ].filter(d => d.value > 0);
+    const allocTotal = allocData.reduce((s, d) => s + d.value, 0);
+
     return (
       <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 16px" }}>Investments & Accounts</h3>
-        <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 16px" }}>All current financial accounts and their roles.</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
-          {accounts.map(acc => (
-            <div key={acc.id} style={{ padding: "14px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
-                  <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "4px", background: "#334155", color: "#94a3b8" }}>{acc.type}</span>
-                </div>
-                <button onClick={() => removeAccount(acc.id)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "14px", padding: "0 4px" }}>×</button>
-              </div>
-              <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0, lineHeight: 1.5 }}>{acc.role}</p>
-            </div>
-          ))}
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
+          <div>
+            <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Accounts Overview</h3>
+            <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>All your accounts. One place. Total financial picture.</p>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <input value={accountDraft.name} onChange={e => setAccountDraft(prev => ({ ...prev, name: e.target.value }))} placeholder="Account name" style={{ width: "120px", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }} />
-          <input value={accountDraft.type} onChange={e => setAccountDraft(prev => ({ ...prev, type: e.target.value }))} placeholder="Type (e.g. Roth IRA)" style={{ width: "140px", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }} />
-          <input value={accountDraft.role} onChange={e => setAccountDraft(prev => ({ ...prev, role: e.target.value }))} placeholder="Role / description" style={{ flex: 1, minWidth: "200px", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }} />
-          <button onClick={addAccount} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "1px solid #0F6E56", background: "transparent", color: "#4ade80", cursor: "pointer" }}>Add</button>
+
+        {/* Stats Row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
+          <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
+            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Assets</p>
+            <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${totalBalance.toLocaleString()}</p>
+          </div>
+          <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
+            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Cash & Savings</p>
+            <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${cashTotal.toLocaleString()}</p>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? ((cashTotal / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
+          </div>
+          <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
+            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Investments</p>
+            <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${(retirementTotal + investmentTotal).toLocaleString()}</p>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? (((retirementTotal + investmentTotal) / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
+          </div>
+          <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
+            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Debt</p>
+            <p style={{ fontSize: "20px", fontWeight: 700, color: "#f87171", margin: 0 }}>${totalDebt.toLocaleString()}</p>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>Student loans</p>
+          </div>
+        </div>
+
+        {/* Two-column layout: accounts list + allocation sidebar */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px" }}>
+          {/* Account List */}
+          <div>
+            <h4 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 12px" }}>All Accounts</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {accounts.map(acc => (
+                <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "16px", alignItems: "center" }}>
+                  {/* Left: name + type */}
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
+                      <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "3px", fontWeight: 500, background: `${badgeColors[acc.badge] || "#475569"}22`, color: badgeColors[acc.badge] || "#94a3b8" }}>
+                        {badgeLabels[acc.badge] || acc.type}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{acc.description}</p>
+                  </div>
+
+                  {/* Middle: balance (editable) */}
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>Balance</p>
+                    <input
+                      type="number"
+                      value={acc.balance || ""}
+                      onChange={e => updateAccountBalance(acc.id, e.target.value)}
+                      style={{ width: "100px", padding: "4px 8px", fontSize: "14px", fontWeight: 600, border: "1px solid #334155", borderRadius: "4px", background: "#0f172a", color: "#f1f5f9", textAlign: "right" }}
+                    />
+                  </div>
+
+                  {/* Right: key metric */}
+                  <div style={{ textAlign: "right", minWidth: "90px" }}>
+                    {acc.metric === "limit" && (
+                      <>
+                        <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>{acc.limit ? ((acc.balance / acc.limit) * 100).toFixed(0) + "% Used" : ""}</p>
+                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.metricLabel}</p>
+                      </>
+                    )}
+                    {acc.metric === "contribution" && (
+                      <>
+                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#4ade80", margin: "0 0 2px" }}>{acc.contribution} Contribution</p>
+                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.vested} Vested</p>
+                      </>
+                    )}
+                    {acc.metric === "return" && (
+                      <>
+                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#4ade80", margin: "0 0 2px" }}>↑ {acc.returnPct}%</p>
+                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>All time</p>
+                      </>
+                    )}
+                    {acc.metric === "contribution_monthly" && (
+                      <>
+                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 2px" }}>${acc.monthlyContribution}/mo</p>
+                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.fund}</p>
+                      </>
+                    )}
+                    {acc.metric === "apy" && (
+                      <>
+                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#4ade80", margin: "0 0 2px" }}>{acc.apy} APY</p>
+                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>Variable</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Allocation Sidebar */}
+          <div>
+            <div style={{ background: "#1e293b", borderRadius: "8px", padding: "16px", border: "1px solid #334155" }}>
+              <h4 style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 14px" }}>Allocation by Type</h4>
+              {/* Simple donut */}
+              <div style={{ position: "relative", width: "120px", height: "120px", margin: "0 auto 14px" }}>
+                <svg width="120" height="120" style={{ transform: "rotate(-90deg)" }}>
+                  {(() => {
+                    let offset = 0;
+                    const circumference = 2 * Math.PI * 45;
+                    return allocData.map((d, i) => {
+                      const pct = allocTotal > 0 ? d.value / allocTotal : 0;
+                      const dash = pct * circumference;
+                      const el = <circle key={i} cx="60" cy="60" r="45" fill="none" stroke={d.color} strokeWidth="12" strokeDasharray={`${dash} ${circumference - dash}`} strokeDashoffset={-offset} />;
+                      offset += dash;
+                      return el;
+                    });
+                  })()}
+                </svg>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
+                  <p style={{ fontSize: "14px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${(allocTotal / 1000).toFixed(1)}k</p>
+                  <p style={{ fontSize: "10px", color: "#64748b", margin: 0 }}>Total</p>
+                </div>
+              </div>
+              {/* Legend */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {allocData.map(d => (
+                  <div key={d.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: d.color }} />
+                      <span style={{ fontSize: "11px", color: "#94a3b8" }}>{d.label}</span>
+                    </div>
+                    <span style={{ fontSize: "11px", color: "#e2e8f0" }}>{allocTotal > 0 ? ((d.value / allocTotal) * 100).toFixed(1) : 0}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
