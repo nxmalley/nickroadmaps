@@ -835,7 +835,7 @@ export default function FinancialRoadmap() {
     const cryptoTotal = accounts.filter(a => a.badge === "speculative").reduce((s, a) => s + (a.balance || 0), 0);
     const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
 
-    const badgeColors = { savings: "#fbbf24", retirement: "#34d399", brokerage: "#60a5fa", speculative: "#a78bfa" };
+    const badgeColors = { savings: "#94a3b8", retirement: "#1e40af", brokerage: "#059669", speculative: "#ec4899" };
     const badgeLabels = { savings: "Cash", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
     const trackedAccounts = ["acc3", "acc4", "acc5", "acc6"]; // Empower, Fidelity Roth, Fidelity CMA, Capital One
 
@@ -884,11 +884,11 @@ export default function FinancialRoadmap() {
 
     // Allocation donut
     const allocData = [
-      { label: "Cash", value: cashTotal, color: "#fbbf24" },
-      { label: "Retirement", value: retirementTotal, color: "#34d399" },
-      { label: "Brokerage", value: brokerageTotal, color: "#60a5fa" },
-      { label: "Crypto", value: cryptoTotal, color: "#a78bfa" },
-    ].filter(d => d.value > 0);
+      { label: "Cash", value: cashTotal, color: "#94a3b8" },
+      { label: "Retirement", value: retirementTotal, color: "#1e40af" },
+      { label: "Brokerage", value: brokerageTotal, color: "#059669" },
+      { label: "Crypto", value: cryptoTotal, color: "#ec4899" },
+    ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
     const allocTotal = allocData.reduce((s, d) => s + d.value, 0);
 
     return (
@@ -933,7 +933,13 @@ export default function FinancialRoadmap() {
           <div>
             <h4 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 12px" }}>All Accounts</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {accounts.map(acc => {
+              {[...accounts].sort((a, b) => {
+                const catOrder = { brokerage: 0, savings: 1, retirement: 2, speculative: 3 };
+                const catA = catOrder[a.badge] ?? 99;
+                const catB = catOrder[b.badge] ?? 99;
+                if (catA !== catB) return catA - catB;
+                return a.name.localeCompare(b.name);
+              }).map(acc => {
                 const logos = { NFCU: "/nfcu-logo.png", USAA: "/USAA logo.png", Empower: "/Empower logo.png", Fidelity: "/fidelity-logo.png", "Capital One": "/Capital-One-Logo.png", Robinhood: "/robinhood-logo.png" };
                 const growth = trackedAccounts.includes(acc.id) ? getGrowth(acc.id) : null;
                 return (
