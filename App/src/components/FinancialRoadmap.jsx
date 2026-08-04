@@ -119,6 +119,7 @@ const NW_STORAGE_KEY = "financial-roadmap-networth-log";
 
 /* ─── Component ─── */
 export default function FinancialRoadmap() {
+  const [dataLoaded, setDataLoaded] = useState(false);
   const { progress, toggle } = useProgressStore("financial-masterplan");
   const [activePhase, setActivePhase] = useState(0);
   const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "rules" | "history" | "accounts" | "future"
@@ -248,39 +249,51 @@ export default function FinancialRoadmap() {
   });
   const [earnedDraft, setEarnedDraft] = useState("");
 
+  // Load persisted data from server on mount
   useEffect(() => {
-    try {
-      localStorage.setItem(NW_STORAGE_KEY, JSON.stringify(log));
-    } catch { /* ignore */ }
-  }, [log]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/financial-data');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && !cancelled) {
+            if (data.log) setLog(data.log);
+            if (data.accountChangeLog) setAccountChangeLog(data.accountChangeLog);
+            if (data.accounts) setAccounts(data.accounts);
+            if (data.salaryHistory) setSalaryHistory(data.salaryHistory);
+            if (data.earningsData) setEarningsData(data.earningsData);
+            if (data.futureNotes) setFutureNotes(data.futureNotes);
+            if (data.earnedItems) setEarnedItems(data.earnedItems);
+            if (data.completedArchive) setCompletedArchive(data.completedArchive);
+          }
+        }
+      } catch { /* fallback to localStorage defaults already loaded */ }
+      if (!cancelled) setDataLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
+  // Save all financial data to server whenever any piece changes
   useEffect(() => {
-    try { localStorage.setItem("financial-roadmap-future-notes", JSON.stringify(futureNotes)); } catch { /* ignore */ }
-  }, [futureNotes]);
-
-  useEffect(() => {
-    try { localStorage.setItem("financial-roadmap-accounts", JSON.stringify(accounts)); } catch { /* ignore */ }
-  }, [accounts]);
-
-  useEffect(() => {
-    try { localStorage.setItem("financial-roadmap-completed", JSON.stringify(completedArchive)); } catch { /* ignore */ }
-  }, [completedArchive]);
-
-  useEffect(() => {
-    try { localStorage.setItem("financial-roadmap-earned", JSON.stringify(earnedItems)); } catch { /* ignore */ }
-  }, [earnedItems]);
-
-  useEffect(() => {
-    try { localStorage.setItem("financial-roadmap-earnings", JSON.stringify(earningsData)); } catch { /* ignore */ }
-  }, [earningsData]);
-
-  useEffect(() => {
+    if (!dataLoaded) return; // Don't save before initial load completes
+    const data = { log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, completedArchive };
+    // Save to localStorage as immediate fallback
+    try { localStorage.setItem("financial-roadmap-networth-log", JSON.stringify(log)); } catch { /* ignore */ }
     try { localStorage.setItem("financial-roadmap-account-log", JSON.stringify(accountChangeLog)); } catch { /* ignore */ }
-  }, [accountChangeLog]);
-
-  useEffect(() => {
+    try { localStorage.setItem("financial-roadmap-accounts", JSON.stringify(accounts)); } catch { /* ignore */ }
     try { localStorage.setItem("financial-roadmap-salary", JSON.stringify(salaryHistory)); } catch { /* ignore */ }
-  }, [salaryHistory]);
+    try { localStorage.setItem("financial-roadmap-earnings", JSON.stringify(earningsData)); } catch { /* ignore */ }
+    try { localStorage.setItem("financial-roadmap-future-notes", JSON.stringify(futureNotes)); } catch { /* ignore */ }
+    try { localStorage.setItem("financial-roadmap-earned", JSON.stringify(earnedItems)); } catch { /* ignore */ }
+    try { localStorage.setItem("financial-roadmap-completed", JSON.stringify(completedArchive)); } catch { /* ignore */ }
+    // Sync to server (fire and forget — don't block UI)
+    fetch('/api/financial-data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).catch(() => { /* silent — localStorage is the fallback */ });
+  }, [dataLoaded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, completedArchive]);
 
   // Auto-archive fully completed groups
   useEffect(() => {
