@@ -129,6 +129,7 @@ export default function FinancialRoadmap() {
   const [updateModal, setUpdateModal] = useState(null); // { accId, accName, accType, currentBalance, newBalance, note }
   const [updateDraft, setUpdateDraft] = useState({ value: "", note: "" });
   const [showSalaryForm, setShowSalaryForm] = useState(false);
+  const [showSalaryPanel, setShowSalaryPanel] = useState(false);
   const [salaryDraft, setSalaryDraft] = useState({ year: "", title: "", employer: "", salary: "" });
   const [expandedYear, setExpandedYear] = useState(null);
 
@@ -137,10 +138,10 @@ export default function FinancialRoadmap() {
     try {
       const raw = localStorage.getItem("financial-roadmap-salary");
       return raw ? JSON.parse(raw) : [
-        { year: "2026", title: "Systems Administrator", employer: "Leidos", salary: "100000" },
-        { year: "2025", title: "Systems Administrator", employer: "Leidos", salary: "54142" },
-        { year: "2024", title: "Help Desk Analyst", employer: "SAIC", salary: "43700" },
-        { year: "2021", title: "Help Desk Analyst", employer: "Media Cross", salary: "35800" },
+        { year: "2026", title: "Jr Software Engineer", employer: "Leidos", salary: "100000" },
+        { year: "2025", title: "Service Desk Tier 1 Technician", employer: "Leidos", salary: "54142" },
+        { year: "2025", title: "IT Service Desk Analyst", employer: "SAIC", salary: "43700" },
+        { year: "2024–2025", title: "Support Specialist", employer: "Media Cross", salary: "35800" },
       ];
     } catch {
       return [];
@@ -923,9 +924,14 @@ export default function FinancialRoadmap() {
             <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Accounts Overview</h3>
             <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>All your accounts. One place. Total financial picture.</p>
           </div>
-          <button onClick={() => setShowChangeLog(true)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "14px" }}>📋</span> Change Log
-          </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button onClick={() => setShowChangeLog(true)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "14px" }}>📋</span> Change Log
+            </button>
+            <button onClick={() => setShowSalaryPanel(true)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "14px" }}>💼</span> Salary History
+            </button>
+          </div>
         </div>
 
         {/* Stats Row */}
@@ -1047,38 +1053,51 @@ export default function FinancialRoadmap() {
               </div>
             </div>
 
-            {/* Salary Through the Years */}
-            <div style={{ background: "#1e293b", borderRadius: "8px", padding: "20px", border: "1px solid #334155", marginTop: "16px" }}>
-              <h4 style={{ fontSize: "15px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 14px" }}>Salary Through the Years</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 1fr 80px", gap: "8px", marginBottom: "8px" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>Year</span>
-                <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>Job Title</span>
-                <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>Employer</span>
-                <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>Salary</span>
+          </div>
+        </div>
+
+        {/* Salary History Slide-out Panel */}
+        {showSalaryPanel && (
+          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "480px", background: "#0f172a", borderLeft: "1px solid #334155", zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-4px 0 20px rgba(0,0,0,0.4)" }}>
+            <div style={{ padding: "20px", borderBottom: "1px solid #1e293b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <h4 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Salary Through the Years</h4>
+                <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0 }}>Your career compensation history.</p>
               </div>
-              <div style={{ borderTop: "1px solid #334155" }}>
-                {salaryHistory.map((entry, idx) => (
-                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "50px 1fr 1fr 80px", gap: "8px", padding: "10px 0", borderBottom: "1px solid #1e293b", alignItems: "center" }}>
-                    <span style={{ fontSize: "13px", color: "#f1f5f9" }}>{entry.year}</span>
-                    <span style={{ fontSize: "13px", color: "#e2e8f0" }}>{entry.title}</span>
-                    <span style={{ fontSize: "13px", color: "#94a3b8" }}>{entry.employer}</span>
-                    <span style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9" }}>${Number(entry.salary).toLocaleString()}</span>
-                  </div>
-                ))}
+              <button onClick={() => setShowSalaryPanel(false)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "18px" }}>×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
+              {/* Table header */}
+              <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 1fr 100px", gap: "16px", padding: "0 0 10px", borderBottom: "1px solid #334155", marginBottom: "8px" }}>
+                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Year</span>
+                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Job Title</span>
+                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Employer</span>
+                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, textAlign: "right" }}>Salary</span>
               </div>
-              <button onClick={() => setShowSalaryForm(prev => !prev)} style={{ width: "100%", marginTop: "12px", padding: "10px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#334155", color: "#e2e8f0", cursor: "pointer" }}>+ Add Salary Entry</button>
+              {/* Entries */}
+              {salaryHistory.map((entry, idx) => (
+                <div key={idx} style={{ display: "grid", gridTemplateColumns: "70px 1fr 1fr 100px", gap: "16px", padding: "12px 0", borderBottom: "1px solid #1e293b", alignItems: "center" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9" }}>{entry.year}</span>
+                  <span style={{ fontSize: "14px", color: "#e2e8f0" }}>{entry.title}</span>
+                  <span style={{ fontSize: "14px", color: "#94a3b8" }}>{entry.employer}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", textAlign: "right" }}>${Number(entry.salary).toLocaleString()}</span>
+                </div>
+              ))}
+              {/* Add entry form */}
+              <button onClick={() => setShowSalaryForm(prev => !prev)} style={{ width: "100%", marginTop: "16px", padding: "12px", fontSize: "14px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#334155", color: "#e2e8f0", cursor: "pointer" }}>+ Add Entry</button>
               {showSalaryForm && (
-                <div style={{ marginTop: "12px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  <input value={salaryDraft.year} onChange={e => setSalaryDraft(p => ({ ...p, year: e.target.value }))} placeholder="Year" style={{ width: "50px", padding: "6px 8px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#0f172a", color: "#e2e8f0" }} />
-                  <input value={salaryDraft.title} onChange={e => setSalaryDraft(p => ({ ...p, title: e.target.value }))} placeholder="Job Title" style={{ flex: 1, minWidth: "80px", padding: "6px 8px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#0f172a", color: "#e2e8f0" }} />
-                  <input value={salaryDraft.employer} onChange={e => setSalaryDraft(p => ({ ...p, employer: e.target.value }))} placeholder="Employer" style={{ width: "70px", padding: "6px 8px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#0f172a", color: "#e2e8f0" }} />
-                  <input value={salaryDraft.salary} onChange={e => setSalaryDraft(p => ({ ...p, salary: e.target.value }))} placeholder="Salary" style={{ width: "60px", padding: "6px 8px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#0f172a", color: "#e2e8f0" }} />
-                  <button onClick={addSalaryEntry} style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "4px", border: "none", background: "#059669", color: "#fff", cursor: "pointer" }}>Save</button>
+                <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "70px 1fr 1fr 100px", gap: "10px", alignItems: "center" }}>
+                  <input value={salaryDraft.year} onChange={e => setSalaryDraft(p => ({ ...p, year: e.target.value }))} placeholder="Year" style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0" }} />
+                  <input value={salaryDraft.title} onChange={e => setSalaryDraft(p => ({ ...p, title: e.target.value }))} placeholder="Job Title" style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0" }} />
+                  <input value={salaryDraft.employer} onChange={e => setSalaryDraft(p => ({ ...p, employer: e.target.value }))} placeholder="Employer" style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0" }} />
+                  <input value={salaryDraft.salary} onChange={e => setSalaryDraft(p => ({ ...p, salary: e.target.value }))} placeholder="Salary" style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0" }} />
+                  <button onClick={addSalaryEntry} style={{ gridColumn: "1 / -1", padding: "10px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#059669", color: "#fff", cursor: "pointer" }}>Save</button>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        )}
+
         {updateModal && (
           <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
             <div style={{ background: "#1e293b", borderRadius: "12px", padding: "24px", border: "1px solid #334155", width: "380px", maxWidth: "90vw" }}>
