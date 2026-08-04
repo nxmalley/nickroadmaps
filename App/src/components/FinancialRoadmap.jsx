@@ -179,8 +179,8 @@ export default function FinancialRoadmap() {
         { id: "acc3", name: "Empower", type: "Roth 401k", badge: "retirement", balance: 1868, contribution: "6%", fund: "Vanguard Inst'l 500 Index Trust", vested: "100%", description: "Leidos employer plan. Immediate vesting.", metric: "contribution" },
         { id: "acc4", name: "Fidelity", type: "Roth IRA", badge: "retirement", balance: 10704, fund: "FXAIX", returnPct: 8.72, description: "Roth IRA — S&P 500 index fund.", metric: "return" },
         { id: "acc5", name: "Fidelity", type: "CMA (Taxable)", badge: "brokerage", balance: 4504, fund: "BRKB, SCHD + 4 more", monthlyContribution: 382, description: "Cash Management Account. $382/mo split evenly BRKB/SCHD.", metric: "contribution_monthly" },
-        { id: "acc6", name: "Capital One", type: "HYSA", badge: "savings", balance: 603, apy: "4.35%", description: "High-yield savings. 360 Performance.", metric: "apy" },
-        { id: "acc7", name: "Robinhood", type: "Crypto (Speculative)", badge: "speculative", balance: 531, fund: "DOGE, XRP", returnPct: 12.41, description: "Speculative crypto holdings.", metric: "return" },
+        { id: "acc6", name: "Capital One", type: "HYSA", badge: "savings", balance: 603, apy: "3.00%", description: "High-yield savings. 360 Performance.", metric: "apy" },
+        { id: "acc7", name: "Robinhood", type: "Crypto", badge: "speculative", balance: 531, fund: "DOGE, XRP", description: "Crypto holdings.", metric: "none" },
       ];
     } catch {
       return [];
@@ -818,7 +818,7 @@ export default function FinancialRoadmap() {
     const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
 
     const badgeColors = { savings: "#fbbf24", retirement: "#34d399", brokerage: "#60a5fa", speculative: "#f87171" };
-    const badgeLabels = { savings: "Savings", retirement: "Retirement", brokerage: "Brokerage", speculative: "Speculative" };
+    const badgeLabels = { savings: "Savings", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
 
     function updateAccountBalance(id, value) {
       const num = parseFloat(value) || 0;
@@ -872,8 +872,12 @@ export default function FinancialRoadmap() {
           <div>
             <h4 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 12px" }}>All Accounts</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {accounts.map(acc => (
-                <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "16px", alignItems: "center" }}>
+              {accounts.map(acc => {
+                const logos = { NFCU: "/nfcu-logo.png", USAA: "/USAA logo.png", Empower: "/Empower logo.png", Fidelity: "/fidelity-logo.png", "Capital One": "/Capital-One-Logo.png", Robinhood: "/robinhood-logo.png" };
+                return (
+                <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: "14px", alignItems: "center" }}>
+                  {/* Logo */}
+                  <img src={logos[acc.name] || ""} alt={acc.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", background: "#334155" }} />
                   {/* Left: name + type */}
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
@@ -930,7 +934,8 @@ export default function FinancialRoadmap() {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

@@ -163,7 +163,7 @@ export default function DashboardShell({ onLogout }) {
         </div>
       )}
 
-      <main style={styles.contentArea}>
+      <main style={activeRoadmapId && ROADMAP_COMPONENTS[activeRoadmapId] ? { flex: 1 } : styles.contentArea}>
         {renderContent()}
       </main>
     </div>
