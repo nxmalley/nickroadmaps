@@ -182,9 +182,7 @@ const styles = {
   contentArea: {
     flex: 1,
     padding: '1.5rem',
-    maxWidth: '1126px',
     width: '100%',
-    margin: '0 auto',
     boxSizing: 'border-box',
   },
   loadingContainer: {
