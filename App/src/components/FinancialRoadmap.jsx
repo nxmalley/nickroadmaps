@@ -415,7 +415,7 @@ export default function FinancialRoadmap() {
                 padding: "10px 12px", borderRadius: "6px", border: "none",
                 background: isActive ? "#1e293b" : "transparent",
                 color: isActive ? "#4ade80" : "#94a3b8",
-                fontSize: "13px", fontWeight: isActive ? 500 : 400,
+                fontSize: "14px", fontWeight: isActive ? 500 : 400,
                 cursor: "pointer", textAlign: "left", width: "100%",
                 borderLeft: isActive ? "3px solid #0F6E56" : "3px solid transparent",
               }}>
@@ -432,14 +432,14 @@ export default function FinancialRoadmap() {
             padding: "10px 12px", borderRadius: "6px", border: "none",
             background: activeView === "earned" ? "#1e293b" : "transparent",
             color: activeView === "earned" ? "#4ade80" : "#94a3b8",
-            fontSize: "13px", fontWeight: activeView === "earned" ? 500 : 400,
+            fontSize: "14px", fontWeight: activeView === "earned" ? 500 : 400,
             cursor: "pointer", textAlign: "left", width: "100%",
             borderLeft: activeView === "earned" ? "3px solid #0F6E56" : "3px solid transparent",
             marginBottom: "12px",
           }}>
             <span>Earned not Given 💯!</span>
           </button>
-          <p style={{ fontSize: "13px", fontStyle: "italic", color: "#64748b", margin: 0, lineHeight: 1.5, padding: "0 8px" }}>
+          <p style={{ fontSize: "14px", fontStyle: "italic", color: "#64748b", margin: 0, lineHeight: 1.5, padding: "0 8px" }}>
             &ldquo;Discipline today, freedom tomorrow.&rdquo;
           </p>
         </div>
@@ -448,11 +448,11 @@ export default function FinancialRoadmap() {
       {/* ═══ Main Content Area ═══ */}
       <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", minHeight: "100vh" }}>
         {/* Header */}
-        <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 4px" }}>Welcome back, Nick 👋</p>
-        <h2 style={{ fontSize: "22px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>
+        <p style={{ fontSize: "15px", color: "#94a3b8", margin: "0 0 4px" }}>Welcome back, Nick 👋</p>
+        <h2 style={{ fontSize: "24px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>
           Nick&apos;s 20-Year Wealth Roadmap
         </h2>
-        <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 24px" }}>
+        <p style={{ fontSize: "14px", color: "#64748b", margin: "0 0 24px" }}>
           Jul 2026 – 2046 · Goal: $5,000,000 Net Worth
         </p>
 
@@ -463,10 +463,10 @@ export default function FinancialRoadmap() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "28px" }}>
               {/* Card 1: Current Net Worth */}
               <div style={{ background: "#1e293b", borderRadius: "10px", padding: "16px 18px", border: "1px solid #334155" }}>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Current Net Worth</p>
-                <p style={{ fontSize: "24px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px" }}>{formattedNw}</p>
+                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Current Net Worth</p>
+                <p style={{ fontSize: "26px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px" }}>{formattedNw}</p>
                 {nwDelta !== null && (
-                  <p style={{ fontSize: "12px", color: nwDelta >= 0 ? "#4ade80" : "#f87171", margin: "0 0 10px" }}>
+                  <p style={{ fontSize: "13px", color: nwDelta >= 0 ? "#4ade80" : "#f87171", margin: "0 0 10px" }}>
                     {nwDelta >= 0 ? "+" : "-"}${Math.abs(nwDelta).toLocaleString()} this month
                   </p>
                 )}
@@ -535,7 +535,7 @@ export default function FinancialRoadmap() {
 
               {/* Card 2: Overall Progress (donut) */}
               <div style={{ background: "#1e293b", borderRadius: "10px", padding: "16px 18px", border: "1px solid #334155", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.5px", alignSelf: "flex-start" }}>Overall Progress</p>
+                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.5px", alignSelf: "flex-start" }}>Overall Progress</p>
                 <div style={{ position: "relative", width: "72px", height: "72px" }}>
                   <svg width="72" height="72" style={{ transform: "rotate(-90deg)" }}>
                     <circle cx="36" cy="36" r={donutRadius} fill="none" stroke="#334155" strokeWidth="6" />
@@ -556,9 +556,9 @@ export default function FinancialRoadmap() {
 
               {/* Card 3: Current Phase */}
               <div style={{ background: "#1e293b", borderRadius: "10px", padding: "16px 18px", border: "1px solid #334155" }}>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Current Phase</p>
+                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Current Phase</p>
                 <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 6px" }}>{phase.sub}</p>
-                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 10px" }}>{phaseDone} / {phaseTotal} tasks complete</p>
+                <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 10px" }}>{phaseDone} / {phaseTotal} tasks complete</p>
                 <div style={{ height: "3px", background: "#334155", borderRadius: "2px", overflow: "hidden" }}>
                   <div style={{ width: `${phaseTotal ? (phaseDone / phaseTotal) * 100 : 0}%`, height: "100%", background: accent, borderRadius: "2px", transition: "width 0.3s" }} />
                 </div>
@@ -566,9 +566,9 @@ export default function FinancialRoadmap() {
 
               {/* Card 4: Task Progress */}
               <div style={{ background: "#1e293b", borderRadius: "10px", padding: "16px 18px", border: "1px solid #334155" }}>
-                <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Task Progress</p>
-                <p style={{ fontSize: "24px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px" }}>{completedTasks}/{totalTasks}</p>
-                <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 10px" }}>
+                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Task Progress</p>
+                <p style={{ fontSize: "26px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px" }}>{completedTasks}/{totalTasks}</p>
+                <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 10px" }}>
                   {totalTasks ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0}% complete
                 </p>
                 <div style={{ height: "3px", background: "#334155", borderRadius: "2px", overflow: "hidden", marginBottom: "10px" }}>
@@ -589,7 +589,7 @@ export default function FinancialRoadmap() {
                 const phaseAccent = A[i] || A[0];
                 return (
                   <button key={p.id} onClick={() => setActivePhase(i)} style={{
-                    padding: "8px 16px", borderRadius: "8px", fontSize: "13px",
+                    padding: "8px 16px", borderRadius: "8px", fontSize: "14px",
                     flexShrink: 0, border: "none", cursor: "pointer",
                     background: isActive ? "#1e293b" : "transparent",
                     color: isActive ? phaseAccent : "#94a3b8",
@@ -597,7 +597,7 @@ export default function FinancialRoadmap() {
                     borderBottom: isActive ? `2px solid ${phaseAccent}` : "2px solid transparent",
                   }}>
                     <span>{p.title}</span>
-                    <span style={{ display: "block", fontSize: "10px", color: "#64748b", marginTop: "2px" }}>{p.sub}</span>
+                    <span style={{ display: "block", fontSize: "11px", color: "#64748b", marginTop: "2px" }}>{p.sub}</span>
                     {phD > 0 && phD < phT.length && (
                       <span style={{ fontSize: "10px", opacity: 0.7, marginLeft: "4px" }}>{phD}/{phT.length}</span>
                     )}
@@ -625,8 +625,8 @@ export default function FinancialRoadmap() {
                           cursor: "pointer", userSelect: "none",
                         }}
                       >
-                        <span style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", flex: 1 }}>{group.label}</span>
-                        <span style={{ fontSize: "12px", color: gDone === gTotal ? "#4ade80" : "#94a3b8" }}>
+                        <span style={{ fontSize: "15px", fontWeight: 500, color: "#f1f5f9", flex: 1 }}>{group.label}</span>
+                        <span style={{ fontSize: "13px", color: gDone === gTotal ? "#4ade80" : "#94a3b8" }}>
                           {gDone}/{gTotal}
                         </span>
                         <span style={{ fontSize: "12px", color: "#64748b", transition: "transform 0.2s", transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)" }}>▼</span>
@@ -665,12 +665,12 @@ export default function FinancialRoadmap() {
                             {/* Badge + text */}
                             <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flex: 1, minWidth: 0 }}>
                               <span style={{
-                                fontSize: "10px", padding: "2px 6px", borderRadius: "3px",
+                                fontSize: "11px", padding: "2px 6px", borderRadius: "3px",
                                 fontWeight: 500, flexShrink: 0, marginTop: "2px",
                                 background: catDef.bg, color: catDef.color,
                               }}>{catDef.label}</span>
                               <span style={{
-                                fontSize: "13px", lineHeight: "1.55",
+                                fontSize: "14px", lineHeight: "1.55",
                                 color: isChecked ? "#64748b" : "#e2e8f0",
                                 textDecoration: isChecked ? "line-through" : "none",
                               }}>{task.text}</span>
@@ -943,42 +943,42 @@ export default function FinancialRoadmap() {
                 const logos = { NFCU: "/nfcu-logo.png", USAA: "/USAA logo.png", Empower: "/Empower logo.png", Fidelity: "/fidelity-logo.png", "Capital One": "/Capital-One-Logo.png", Robinhood: "/robinhood-logo.png" };
                 const growth = trackedAccounts.includes(acc.id) ? getGrowth(acc.id) : null;
                 return (
-                  <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: "14px", alignItems: "center" }}>
+                  <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "16px 20px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: "20px", alignItems: "center", minHeight: "70px" }}>
                     {/* Logo */}
                     <img src={logos[acc.name] || ""} alt={acc.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", background: "#334155" }} />
                     {/* Name + type */}
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
+                        <span style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
                         <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "3px", fontWeight: 500, background: `${badgeColors[acc.badge] || "#475569"}22`, color: badgeColors[acc.badge] || "#94a3b8" }}>
                           {badgeLabels[acc.badge] || acc.type}
                         </span>
                       </div>
-                      <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{acc.description}</p>
+                      <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>{acc.description}</p>
                     </div>
                     {/* Balance (display only — locked in) */}
                     <div style={{ textAlign: "right" }}>
-                      <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>Current Balance</p>
-                      <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>${(acc.balance || 0).toLocaleString()}</p>
+                      <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 2px" }}>Current Balance</p>
+                      <p style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>${(acc.balance || 0).toLocaleString()}</p>
                     </div>
                     {/* Growth (for tracked accounts) */}
                     <div style={{ textAlign: "right", minWidth: "80px" }}>
                       {trackedAccounts.includes(acc.id) ? (
                         <>
-                          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>All Time Growth</p>
-                          <p style={{ fontSize: "13px", fontWeight: 500, color: growth !== null && parseFloat(growth) >= 0 ? "#4ade80" : growth !== null ? "#f87171" : "#64748b", margin: 0 }}>
+                          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 2px" }}>All Time Growth</p>
+                          <p style={{ fontSize: "15px", fontWeight: 500, color: growth !== null && parseFloat(growth) >= 0 ? "#4ade80" : growth !== null ? "#f87171" : "#64748b", margin: 0 }}>
                             {growth !== null ? `${parseFloat(growth) >= 0 ? "+" : ""}${growth}%` : "—"}
                           </p>
                         </>
                       ) : (
                         <>
-                          {acc.metric === "limit" && <><p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>{acc.limit ? ((acc.balance / acc.limit) * 100).toFixed(0) + "% Used" : ""}</p><p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.metricLabel}</p></>}
+                          {acc.metric === "limit" && <><p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 2px" }}>{acc.limit ? ((acc.balance / acc.limit) * 100).toFixed(0) + "% Used" : ""}</p><p style={{ fontSize: "12px", color: "#475569", margin: 0 }}>{acc.metricLabel}</p></>}
                           {acc.metric === "none" && <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>—</p>}
                         </>
                       )}
                     </div>
                     {/* Update button */}
-                    <button onClick={() => openUpdateModal(acc)} style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }}>
+                    <button onClick={() => openUpdateModal(acc)} style={{ padding: "8px 16px", fontSize: "13px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }}>
                       Update
                     </button>
                   </div>
