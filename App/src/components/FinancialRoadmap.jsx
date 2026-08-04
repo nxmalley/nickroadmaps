@@ -835,7 +835,7 @@ export default function FinancialRoadmap() {
     const cryptoTotal = accounts.filter(a => a.badge === "speculative").reduce((s, a) => s + (a.balance || 0), 0);
     const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
 
-    const badgeColors = { savings: "#94a3b8", retirement: "#0abab5", brokerage: "#059669", speculative: "#ec4899" };
+    const badgeColors = { savings: "#94a3b8", retirement: "#3b82f6", brokerage: "#059669", speculative: "#ec4899" };
     const badgeLabels = { savings: "Cash", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
     const trackedAccounts = ["acc3", "acc4", "acc5", "acc6"]; // Empower, Fidelity Roth, Fidelity CMA, Capital One
 
@@ -885,7 +885,7 @@ export default function FinancialRoadmap() {
     // Allocation donut
     const allocData = [
       { label: "Cash", value: cashTotal, color: "#94a3b8" },
-      { label: "Retirement", value: retirementTotal, color: "#0abab5" },
+      { label: "Retirement", value: retirementTotal, color: "#3b82f6" },
       { label: "Brokerage", value: brokerageTotal, color: "#059669" },
       { label: "Crypto", value: cryptoTotal, color: "#ec4899" },
     ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
