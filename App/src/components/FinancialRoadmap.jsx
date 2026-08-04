@@ -812,13 +812,14 @@ export default function FinancialRoadmap() {
 
   function renderAccounts() {
     const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
-    const retirementTotal = accounts.filter(a => a.badge === "retirement").reduce((s, a) => s + (a.balance || 0), 0);
-    const investmentTotal = accounts.filter(a => a.badge === "brokerage" || a.badge === "speculative").reduce((s, a) => s + (a.balance || 0), 0);
     const cashTotal = accounts.filter(a => a.badge === "savings").reduce((s, a) => s + (a.balance || 0), 0);
+    const retirementTotal = accounts.filter(a => a.badge === "retirement").reduce((s, a) => s + (a.balance || 0), 0);
+    const brokerageTotal = accounts.filter(a => a.badge === "brokerage").reduce((s, a) => s + (a.balance || 0), 0);
+    const cryptoTotal = accounts.filter(a => a.badge === "speculative").reduce((s, a) => s + (a.balance || 0), 0);
     const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
 
-    const badgeColors = { savings: "#fbbf24", retirement: "#34d399", brokerage: "#60a5fa", speculative: "#f87171" };
-    const badgeLabels = { savings: "Savings", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
+    const badgeColors = { savings: "#fbbf24", retirement: "#34d399", brokerage: "#60a5fa", speculative: "#a78bfa" };
+    const badgeLabels = { savings: "Cash", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
 
     function updateAccountBalance(id, value) {
       const num = parseFloat(value) || 0;
@@ -827,9 +828,10 @@ export default function FinancialRoadmap() {
 
     // Allocation donut
     const allocData = [
+      { label: "Cash", value: cashTotal, color: "#fbbf24" },
       { label: "Retirement", value: retirementTotal, color: "#34d399" },
-      { label: "Investments", value: investmentTotal, color: "#60a5fa" },
-      { label: "Cash & Savings", value: cashTotal, color: "#fbbf24" },
+      { label: "Brokerage", value: brokerageTotal, color: "#60a5fa" },
+      { label: "Crypto", value: cryptoTotal, color: "#a78bfa" },
     ].filter(d => d.value > 0);
     const allocTotal = allocData.reduce((s, d) => s + d.value, 0);
 
@@ -850,14 +852,14 @@ export default function FinancialRoadmap() {
             <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${totalBalance.toLocaleString()}</p>
           </div>
           <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
-            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Cash & Savings</p>
+            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Cash</p>
             <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${cashTotal.toLocaleString()}</p>
             <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? ((cashTotal / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
           </div>
           <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
             <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Investments</p>
-            <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${(retirementTotal + investmentTotal).toLocaleString()}</p>
-            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? (((retirementTotal + investmentTotal) / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
+            <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${(retirementTotal + brokerageTotal + cryptoTotal).toLocaleString()}</p>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? (((retirementTotal + brokerageTotal + cryptoTotal) / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
           </div>
           <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
             <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Debt</p>
