@@ -125,7 +125,20 @@ export default function FinancialRoadmap() {
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [earnedTab, setEarnedTab] = useState("pending");
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [showChangeLog, setShowChangeLog] = useState(false);
+  const [updateModal, setUpdateModal] = useState(null); // { accId, accName, accType, currentBalance, newBalance, note }
+  const [updateDraft, setUpdateDraft] = useState({ value: "", note: "" });
   const [expandedYear, setExpandedYear] = useState(null);
+
+  // Account change log — persisted in localStorage
+  const [accountChangeLog, setAccountChangeLog] = useState(() => {
+    try {
+      const raw = localStorage.getItem("financial-roadmap-account-log");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Monthly earnings data — persisted in localStorage
   const [earningsData, setEarningsData] = useState(() => {
@@ -242,6 +255,10 @@ export default function FinancialRoadmap() {
   useEffect(() => {
     try { localStorage.setItem("financial-roadmap-earnings", JSON.stringify(earningsData)); } catch { /* ignore */ }
   }, [earningsData]);
+
+  useEffect(() => {
+    try { localStorage.setItem("financial-roadmap-account-log", JSON.stringify(accountChangeLog)); } catch { /* ignore */ }
+  }, [accountChangeLog]);
 
   // Auto-archive fully completed groups
   useEffect(() => {
@@ -820,10 +837,49 @@ export default function FinancialRoadmap() {
 
     const badgeColors = { savings: "#fbbf24", retirement: "#34d399", brokerage: "#60a5fa", speculative: "#a78bfa" };
     const badgeLabels = { savings: "Cash", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
+    const trackedAccounts = ["acc3", "acc4", "acc5", "acc6"]; // Empower, Fidelity Roth, Fidelity CMA, Capital One
 
-    function updateAccountBalance(id, value) {
-      const num = parseFloat(value) || 0;
-      setAccounts(prev => prev.map(a => a.id === id ? { ...a, balance: num } : a));
+    function getGrowth(accId) {
+      const logs = accountChangeLog.filter(l => l.accId === accId);
+      if (logs.length === 0) return null;
+      const first = logs[0].newBalance;
+      const acc = accounts.find(a => a.id === accId);
+      const current = acc?.balance || 0;
+      if (first === 0) return null;
+      return ((current - first) / Math.abs(first) * 100).toFixed(2);
+    }
+
+    function openUpdateModal(acc) {
+      setUpdateModal({ accId: acc.id, accName: acc.name, accType: acc.type, currentBalance: acc.balance });
+      setUpdateDraft({ value: String(acc.balance), note: "" });
+    }
+
+    function confirmUpdate() {
+      if (!updateModal) return;
+      const newBal = parseFloat(updateDraft.value) || 0;
+      const oldBal = updateModal.currentBalance;
+
+      // Update balance
+      setAccounts(prev => prev.map(a => a.id === updateModal.accId ? { ...a, balance: newBal } : a));
+
+      // Log the change if tracked account
+      if (trackedAccounts.includes(updateModal.accId)) {
+        setAccountChangeLog(prev => [...prev, {
+          id: `log-${Date.now()}`,
+          accId: updateModal.accId,
+          accName: updateModal.accName,
+          accType: updateModal.accType,
+          oldBalance: oldBal,
+          newBalance: newBal,
+          change: newBal - oldBal,
+          changePct: oldBal !== 0 ? ((newBal - oldBal) / Math.abs(oldBal) * 100).toFixed(2) : "N/A",
+          note: updateDraft.note || "",
+          date: new Date().toISOString(),
+        }]);
+      }
+
+      setUpdateModal(null);
+      setUpdateDraft({ value: "", note: "" });
     }
 
     // Allocation donut
@@ -836,13 +892,16 @@ export default function FinancialRoadmap() {
     const allocTotal = allocData.reduce((s, d) => s + d.value, 0);
 
     return (
-      <div>
+      <div style={{ position: "relative" }}>
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <div>
             <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Accounts Overview</h3>
             <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>All your accounts. One place. Total financial picture.</p>
           </div>
+          <button onClick={() => setShowChangeLog(true)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "14px" }}>📋</span> Change Log
+          </button>
         </div>
 
         {/* Stats Row */}
@@ -868,7 +927,7 @@ export default function FinancialRoadmap() {
           </div>
         </div>
 
-        {/* Two-column layout: accounts list + allocation sidebar */}
+        {/* Two-column layout */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px" }}>
           {/* Account List */}
           <div>
@@ -876,66 +935,47 @@ export default function FinancialRoadmap() {
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {accounts.map(acc => {
                 const logos = { NFCU: "/nfcu-logo.png", USAA: "/USAA logo.png", Empower: "/Empower logo.png", Fidelity: "/fidelity-logo.png", "Capital One": "/Capital-One-Logo.png", Robinhood: "/robinhood-logo.png" };
+                const growth = trackedAccounts.includes(acc.id) ? getGrowth(acc.id) : null;
                 return (
-                <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: "14px", alignItems: "center" }}>
-                  {/* Logo */}
-                  <img src={logos[acc.name] || ""} alt={acc.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", background: "#334155" }} />
-                  {/* Left: name + type */}
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
-                      <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "3px", fontWeight: 500, background: `${badgeColors[acc.badge] || "#475569"}22`, color: badgeColors[acc.badge] || "#94a3b8" }}>
-                        {badgeLabels[acc.badge] || acc.type}
-                      </span>
+                  <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: "14px", alignItems: "center" }}>
+                    {/* Logo */}
+                    <img src={logos[acc.name] || ""} alt={acc.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", background: "#334155" }} />
+                    {/* Name + type */}
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                        <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
+                        <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "3px", fontWeight: 500, background: `${badgeColors[acc.badge] || "#475569"}22`, color: badgeColors[acc.badge] || "#94a3b8" }}>
+                          {badgeLabels[acc.badge] || acc.type}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{acc.description}</p>
                     </div>
-                    <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{acc.description}</p>
+                    {/* Balance (display only — locked in) */}
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>Current Balance</p>
+                      <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>${(acc.balance || 0).toLocaleString()}</p>
+                    </div>
+                    {/* Growth (for tracked accounts) */}
+                    <div style={{ textAlign: "right", minWidth: "80px" }}>
+                      {trackedAccounts.includes(acc.id) ? (
+                        <>
+                          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>All Time Growth</p>
+                          <p style={{ fontSize: "13px", fontWeight: 500, color: growth !== null && parseFloat(growth) >= 0 ? "#4ade80" : growth !== null ? "#f87171" : "#64748b", margin: 0 }}>
+                            {growth !== null ? `${parseFloat(growth) >= 0 ? "+" : ""}${growth}%` : "—"}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          {acc.metric === "limit" && <><p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>{acc.limit ? ((acc.balance / acc.limit) * 100).toFixed(0) + "% Used" : ""}</p><p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.metricLabel}</p></>}
+                          {acc.metric === "none" && <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>—</p>}
+                        </>
+                      )}
+                    </div>
+                    {/* Update button */}
+                    <button onClick={() => openUpdateModal(acc)} style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }}>
+                      Update
+                    </button>
                   </div>
-
-                  {/* Middle: balance (editable) */}
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>Balance</p>
-                    <input
-                      type="number"
-                      value={acc.balance || ""}
-                      onChange={e => updateAccountBalance(acc.id, e.target.value)}
-                      style={{ width: "100px", padding: "4px 8px", fontSize: "14px", fontWeight: 600, border: "1px solid #334155", borderRadius: "4px", background: "#0f172a", color: "#f1f5f9", textAlign: "right" }}
-                    />
-                  </div>
-
-                  {/* Right: key metric */}
-                  <div style={{ textAlign: "right", minWidth: "90px" }}>
-                    {acc.metric === "limit" && (
-                      <>
-                        <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>{acc.limit ? ((acc.balance / acc.limit) * 100).toFixed(0) + "% Used" : ""}</p>
-                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.metricLabel}</p>
-                      </>
-                    )}
-                    {acc.metric === "contribution" && (
-                      <>
-                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#4ade80", margin: "0 0 2px" }}>{acc.contribution} Contribution</p>
-                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.vested} Vested</p>
-                      </>
-                    )}
-                    {acc.metric === "return" && (
-                      <>
-                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#4ade80", margin: "0 0 2px" }}>↑ {acc.returnPct}%</p>
-                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>All time</p>
-                      </>
-                    )}
-                    {acc.metric === "contribution_monthly" && (
-                      <>
-                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 2px" }}>${acc.monthlyContribution}/mo</p>
-                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{acc.fund}</p>
-                      </>
-                    )}
-                    {acc.metric === "apy" && (
-                      <>
-                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#4ade80", margin: "0 0 2px" }}>{acc.apy} APY</p>
-                        <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>Variable</p>
-                      </>
-                    )}
-                  </div>
-                </div>
                 );
               })}
             </div>
@@ -945,7 +985,6 @@ export default function FinancialRoadmap() {
           <div>
             <div style={{ background: "#1e293b", borderRadius: "8px", padding: "16px", border: "1px solid #334155" }}>
               <h4 style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 14px" }}>Allocation by Type</h4>
-              {/* Simple donut */}
               <div style={{ position: "relative", width: "120px", height: "120px", margin: "0 auto 14px" }}>
                 <svg width="120" height="120" style={{ transform: "rotate(-90deg)" }}>
                   {(() => {
@@ -965,7 +1004,6 @@ export default function FinancialRoadmap() {
                   <p style={{ fontSize: "10px", color: "#64748b", margin: 0 }}>Total</p>
                 </div>
               </div>
-              {/* Legend */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {allocData.map(d => (
                   <div key={d.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -980,6 +1018,91 @@ export default function FinancialRoadmap() {
             </div>
           </div>
         </div>
+
+        {/* Confirm Update Modal */}
+        {updateModal && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+            <div style={{ background: "#1e293b", borderRadius: "12px", padding: "24px", border: "1px solid #334155", width: "380px", maxWidth: "90vw" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h4 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>Confirm Balance Update</h4>
+                <button onClick={() => setUpdateModal(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "18px" }}>×</button>
+              </div>
+              <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 12px" }}>You're about to update the balance for:</p>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                <img src={{ NFCU: "/nfcu-logo.png", USAA: "/USAA logo.png", Empower: "/Empower logo.png", Fidelity: "/fidelity-logo.png", "Capital One": "/Capital-One-Logo.png", Robinhood: "/robinhood-logo.png" }[updateModal.accName] || ""} alt="" style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover", background: "#334155" }} />
+                <div>
+                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>{updateModal.accName}</p>
+                  <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{updateModal.accType}</p>
+                </div>
+              </div>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>New Balance</p>
+              <input
+                type="number"
+                value={updateDraft.value}
+                onChange={e => setUpdateDraft(prev => ({ ...prev, value: e.target.value }))}
+                onKeyDown={e => { if (e.key === "Enter") confirmUpdate(); }}
+                autoFocus
+                style={{ width: "100%", padding: "10px 14px", fontSize: "20px", fontWeight: 700, border: "1px solid #334155", borderRadius: "8px", background: "#0f172a", color: "#4ade80", boxSizing: "border-box", marginBottom: "12px" }}
+              />
+              <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 6px" }}>Are you sure you want to save this change?</p>
+              {trackedAccounts.includes(updateModal.accId) && (
+                <>
+                  <p style={{ fontSize: "11px", color: "#64748b", margin: "12px 0 4px" }}>Note (optional)</p>
+                  <textarea
+                    value={updateDraft.note}
+                    onChange={e => setUpdateDraft(prev => ({ ...prev, note: e.target.value }))}
+                    placeholder="e.g. Market gain, monthly contribution..."
+                    maxLength={200}
+                    style={{ width: "100%", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0", resize: "none", height: "60px", boxSizing: "border-box" }}
+                  />
+                  <p style={{ fontSize: "10px", color: "#475569", margin: "2px 0 0", textAlign: "right" }}>{updateDraft.note.length}/200</p>
+                </>
+              )}
+              <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+                <button onClick={() => setUpdateModal(null)} style={{ flex: 1, padding: "10px", fontSize: "13px", borderRadius: "6px", border: "1px solid #334155", background: "transparent", color: "#94a3b8", cursor: "pointer" }}>Cancel</button>
+                <button onClick={confirmUpdate} style={{ flex: 1, padding: "10px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#0F6E56", color: "#fff", cursor: "pointer" }}>Confirm & Save</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Change Log Slide-out Panel */}
+        {showChangeLog && (
+          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "420px", background: "#0f172a", borderLeft: "1px solid #334155", zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-4px 0 20px rgba(0,0,0,0.4)" }}>
+            <div style={{ padding: "20px", borderBottom: "1px solid #1e293b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <h4 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Change Log</h4>
+                <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0 }}>History of balance updates for your tracked accounts.</p>
+              </div>
+              <button onClick={() => setShowChangeLog(false)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "18px" }}>×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+              {accountChangeLog.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "40px" }}>No changes logged yet. Update a tracked account to start.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {[...accountChangeLog].reverse().map(entry => (
+                    <div key={entry.id} style={{ padding: "12px 14px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>{new Date(entry.date).toLocaleDateString()} {new Date(entry.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span style={{ fontSize: "11px", fontWeight: 500, color: "#f1f5f9" }}>{entry.accName}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: entry.note ? "6px" : 0 }}>
+                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>${entry.oldBalance.toLocaleString()}</span>
+                        <span style={{ fontSize: "10px", color: "#64748b" }}>→</span>
+                        <span style={{ fontSize: "12px", fontWeight: 500, color: "#f1f5f9" }}>${entry.newBalance.toLocaleString()}</span>
+                        <span style={{ fontSize: "11px", color: entry.change >= 0 ? "#4ade80" : "#f87171", marginLeft: "6px" }}>
+                          {entry.change >= 0 ? "+" : ""}${entry.change.toLocaleString()} ({entry.changePct}%)
+                        </span>
+                      </div>
+                      {entry.note && <p style={{ fontSize: "11px", color: "#64748b", margin: 0, fontStyle: "italic" }}>{entry.note}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
