@@ -835,7 +835,7 @@ export default function FinancialRoadmap() {
     const cryptoTotal = accounts.filter(a => a.badge === "speculative").reduce((s, a) => s + (a.balance || 0), 0);
     const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
 
-    const badgeColors = { savings: "#94a3b8", retirement: "#1e40af", brokerage: "#059669", speculative: "#ec4899" };
+    const badgeColors = { savings: "#94a3b8", retirement: "#0abab5", brokerage: "#059669", speculative: "#ec4899" };
     const badgeLabels = { savings: "Cash", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
     const trackedAccounts = ["acc3", "acc4", "acc5", "acc6"]; // Empower, Fidelity Roth, Fidelity CMA, Capital One
 
@@ -885,7 +885,7 @@ export default function FinancialRoadmap() {
     // Allocation donut
     const allocData = [
       { label: "Cash", value: cashTotal, color: "#94a3b8" },
-      { label: "Retirement", value: retirementTotal, color: "#1e40af" },
+      { label: "Retirement", value: retirementTotal, color: "#0abab5" },
       { label: "Brokerage", value: brokerageTotal, color: "#059669" },
       { label: "Crypto", value: cryptoTotal, color: "#ec4899" },
     ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
@@ -907,32 +907,32 @@ export default function FinancialRoadmap() {
         {/* Stats Row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
           <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
-            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Assets</p>
+            <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Assets</p>
             <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${totalBalance.toLocaleString()}</p>
           </div>
           <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
-            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Cash</p>
+            <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Cash</p>
             <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${cashTotal.toLocaleString()}</p>
-            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? ((cashTotal / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
+            <p style={{ fontSize: "14px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? ((cashTotal / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
           </div>
           <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
-            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Investments</p>
+            <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Investments</p>
             <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${(retirementTotal + brokerageTotal + cryptoTotal).toLocaleString()}</p>
-            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? (((retirementTotal + brokerageTotal + cryptoTotal) / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
+            <p style={{ fontSize: "14px", color: "#64748b", margin: "4px 0 0" }}>{allocTotal > 0 ? (((retirementTotal + brokerageTotal + cryptoTotal) / allocTotal) * 100).toFixed(1) : 0}% of assets</p>
           </div>
           <div style={{ background: "#1e293b", borderRadius: "8px", padding: "14px 16px", border: "1px solid #334155" }}>
-            <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Debt</p>
+            <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase" }}>Total Debt</p>
             <p style={{ fontSize: "20px", fontWeight: 700, color: "#f87171", margin: 0 }}>${totalDebt.toLocaleString()}</p>
-            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>Student loans</p>
+            <p style={{ fontSize: "14px", color: "#64748b", margin: "4px 0 0" }}>Student loans</p>
           </div>
         </div>
 
         {/* Two-column layout */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "28px" }}>
           {/* Account List */}
           <div>
-            <h4 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 12px" }}>All Accounts</h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <h4 style={{ fontSize: "16px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 12px" }}>All Accounts</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
               {[...accounts].sort((a, b) => {
                 const catOrder = { brokerage: 0, savings: 1, retirement: 2, speculative: 3 };
                 const catA = catOrder[a.badge] ?? 99;
@@ -943,30 +943,30 @@ export default function FinancialRoadmap() {
                 const logos = { NFCU: "/nfcu-logo.png", USAA: "/USAA logo.png", Empower: "/Empower logo.png", Fidelity: "/fidelity-logo.png", "Capital One": "/Capital-One-Logo.png", Robinhood: "/robinhood-logo.png" };
                 const growth = trackedAccounts.includes(acc.id) ? getGrowth(acc.id) : null;
                 return (
-                  <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "16px 20px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: "20px", alignItems: "center", minHeight: "70px" }}>
+                  <div key={acc.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "18px 24px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: "20px", alignItems: "center", minHeight: "70px" }}>
                     {/* Logo */}
                     <img src={logos[acc.name] || ""} alt={acc.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", background: "#334155" }} />
                     {/* Name + type */}
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                         <span style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9" }}>{acc.name}</span>
-                        <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "3px", fontWeight: 500, background: `${badgeColors[acc.badge] || "#475569"}22`, color: badgeColors[acc.badge] || "#94a3b8" }}>
+                        <span style={{ fontSize: "12px", padding: "3px 8px", borderRadius: "4px", fontWeight: 500, background: `${badgeColors[acc.badge] || "#475569"}22`, color: badgeColors[acc.badge] || "#94a3b8" }}>
                           {badgeLabels[acc.badge] || acc.type}
                         </span>
                       </div>
-                      <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>{acc.description}</p>
+                      <p style={{ fontSize: "14px", color: "#94a3b8", margin: 0 }}>{acc.description}</p>
                     </div>
                     {/* Balance (display only — locked in) */}
                     <div style={{ textAlign: "right" }}>
-                      <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 2px" }}>Current Balance</p>
-                      <p style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>${(acc.balance || 0).toLocaleString()}</p>
+                      <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 2px" }}>Current Balance</p>
+                      <p style={{ fontSize: "20px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>${(acc.balance || 0).toLocaleString()}</p>
                     </div>
                     {/* Growth (for tracked accounts) */}
                     <div style={{ textAlign: "right", minWidth: "80px" }}>
                       {trackedAccounts.includes(acc.id) ? (
                         <>
-                          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 2px" }}>All Time Growth</p>
-                          <p style={{ fontSize: "15px", fontWeight: 500, color: growth !== null && parseFloat(growth) >= 0 ? "#4ade80" : growth !== null ? "#f87171" : "#64748b", margin: 0 }}>
+                          <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 2px" }}>All Time Growth</p>
+                          <p style={{ fontSize: "16px", fontWeight: 500, color: growth !== null && parseFloat(growth) >= 0 ? "#4ade80" : growth !== null ? "#f87171" : "#64748b", margin: 0 }}>
                             {growth !== null ? `${parseFloat(growth) >= 0 ? "+" : ""}${growth}%` : "—"}
                           </p>
                         </>
@@ -989,8 +989,8 @@ export default function FinancialRoadmap() {
 
           {/* Allocation Sidebar */}
           <div>
-            <div style={{ background: "#1e293b", borderRadius: "8px", padding: "16px", border: "1px solid #334155" }}>
-              <h4 style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 14px" }}>Allocation by Type</h4>
+            <div style={{ background: "#1e293b", borderRadius: "8px", padding: "20px", border: "1px solid #334155" }}>
+              <h4 style={{ fontSize: "15px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 14px" }}>Allocation by Type</h4>
               <div style={{ position: "relative", width: "120px", height: "120px", margin: "0 auto 14px" }}>
                 <svg width="120" height="120" style={{ transform: "rotate(-90deg)" }}>
                   {(() => {
@@ -1006,7 +1006,7 @@ export default function FinancialRoadmap() {
                   })()}
                 </svg>
                 <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-                  <p style={{ fontSize: "14px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${(allocTotal / 1000).toFixed(1)}k</p>
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${(allocTotal / 1000).toFixed(1)}k</p>
                   <p style={{ fontSize: "10px", color: "#64748b", margin: 0 }}>Total</p>
                 </div>
               </div>
@@ -1015,9 +1015,9 @@ export default function FinancialRoadmap() {
                   <div key={d.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: d.color }} />
-                      <span style={{ fontSize: "11px", color: "#94a3b8" }}>{d.label}</span>
+                      <span style={{ fontSize: "13px", color: "#94a3b8" }}>{d.label}</span>
                     </div>
-                    <span style={{ fontSize: "11px", color: "#e2e8f0" }}>{allocTotal > 0 ? ((d.value / allocTotal) * 100).toFixed(1) : 0}%</span>
+                    <span style={{ fontSize: "13px", color: "#e2e8f0" }}>{allocTotal > 0 ? ((d.value / allocTotal) * 100).toFixed(1) : 0}%</span>
                   </div>
                 ))}
               </div>
