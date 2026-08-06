@@ -293,7 +293,6 @@ export const nickRoadmap = {
         {
           id: "p4bd1", label: "BD Checkpoint", dates: "Oct 2027",
           tasks: [
-            { id: "p4bd1a", cat: "capture", text: "Build out Malnax's first real capability statement (v1) — one page, structured like the primes: core competencies, differentiators, NAICS/PSC codes, past-performance placeholder ready for your first engagement" },
             { id: "p4bd1b", cat: "capture", text: "Research 3–5 potential teaming partners or subcontracting primes in the small-business IC/DoD space. Understand how SBA set-asides and subcontracting actually work — Malnax's realistic entry point is subbing, not prime contracts on day one" },
           ],
         },
