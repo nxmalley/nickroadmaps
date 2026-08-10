@@ -199,31 +199,45 @@ export default function FinancialRoadmap() {
 
   function migrateEarnedItems(items) {
     if (!Array.isArray(items)) return items;
-    // Price correction map — always applied regardless of format
-    const PRICE_FIX = {
-      "earn-yukon": { price: 70000, goalType: "none", goalTarget: 0 },
-      "earn-suv": { price: 70000, goalType: "none", goalTarget: 0, name: "GMC Yukon Denali", category: "Vehicle", image: "/GMC_Yukon.png" },
-      "earn-maserati": { price: 225000, goalType: "networth", goalTarget: 2000000 },
-      "earn-amg": { price: 175000, goalType: "networth", goalTarget: 3000000 },
-      "earn-gshock": { price: 250, goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
-      "earn-tissot": { price: 450, goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
-      "earn-seiko": { price: 750, goalType: "networth", goalTarget: 200000 },
-      "earn-longines": { price: 3100, goalType: "networth", goalTarget: 350000 },
-      "earn-tag": { price: 3700, goalType: "networth", goalTarget: 500000 },
-      "earn-rolex": { price: 65000, goalType: "networth", goalTarget: 2500000 },
-      "earn-porsche": { price: 175000, goalType: "networth", goalTarget: 3000000, name: "Mercedes-AMG GT R", category: "Vehicle", image: "/AMG_GTR.png" },
-    };
-    return items.map(item => {
-      const fix = PRICE_FIX[item.id];
-      if (fix) {
-        return { ...item, ...fix, name: fix.name || item.name || item.text };
+    // Canonical list of items that must exist
+    const CANONICAL = [
+      { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0 },
+      { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 225000, image: "/Maserati_McPura.png", goalType: "networth", goalTarget: 2000000 },
+      { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3000000 },
+      { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+      { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+      { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000 },
+      { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000 },
+      { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000 },
+      { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000 },
+    ];
+    // Build a map for quick lookup
+    const canonMap = {};
+    for (const c of CANONICAL) canonMap[c.id] = c;
+    // Also handle old IDs that should map to new items
+    const OLD_ID_MAP = { "earn-suv": "earn-yukon", "earn-porsche": "earn-amg" };
+
+    // Fix existing items and remap old IDs
+    const result = items.map(item => {
+      const remappedId = OLD_ID_MAP[item.id] || item.id;
+      const canon = canonMap[remappedId];
+      if (canon) {
+        return { ...item, ...canon, id: remappedId, completed: item.completed, completedAt: item.completedAt };
       }
-      // Unknown item — ensure it has a name field
-      if (!item.name && item.text) {
-        return { ...item, name: item.text, category: item.category || "Other", price: item.price || 0, image: item.image || null };
-      }
+      // Unknown user-added item — keep as is but ensure name field
+      if (!item.name && item.text) return { ...item, name: item.text };
       return item;
     });
+
+    // Inject any missing canonical items
+    const existingIds = new Set(result.map(r => r.id));
+    for (const canon of CANONICAL) {
+      if (!existingIds.has(canon.id)) {
+        result.push({ ...canon, completed: false, completedAt: null });
+      }
+    }
+
+    return result;
   }
 
   // Load persisted data from server on mount
