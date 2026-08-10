@@ -396,7 +396,7 @@ export default function FinancialRoadmap() {
   const donutOffset = donutCircumference - (goalPct / 100) * donutCircumference;
 
   return (
-    <div style={{ display: "flex", height: "100%", fontFamily: "var(--font-sans)", background: "#0f172a" }}>
+    <div style={{ display: "flex", height: "100%", minHeight: 0, fontFamily: "var(--font-sans)", background: "#0f172a" }}>
       {/* ═══ Left Sidebar ═══ */}
       <aside style={{
         width: "200px",

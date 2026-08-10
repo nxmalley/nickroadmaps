@@ -183,9 +183,10 @@ const styles = {
   },
   contentArea: {
     flex: 1,
-    overflow: 'hidden',
+    overflow: 'auto',
     width: '100%',
     boxSizing: 'border-box',
+    minHeight: 0,
   },
   loadingContainer: {
     display: 'flex',
