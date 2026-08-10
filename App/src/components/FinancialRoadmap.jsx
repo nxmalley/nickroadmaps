@@ -910,7 +910,7 @@ export default function FinancialRoadmap() {
               const itemProg = getItemProgress(item);
               return (
               <div key={item.id} style={{
-                background: "#1e293b", borderRadius: "10px", border: "1px solid #334155",
+                background: "#0b1120", borderRadius: "10px", border: "1px solid #334155",
                 overflow: "hidden", display: "flex", flexDirection: "column", position: "relative",
                 opacity: item.completed ? 0.7 : 1,
               }}>
@@ -946,31 +946,30 @@ export default function FinancialRoadmap() {
                     <span style={{ fontSize: "10px", color: "#fff", fontWeight: 700 }}>✓</span>
                   </div>
                 )}
-                {/* Image area — large, dark background */}
+                {/* Item name/description — top left, below checkbox */}
+                <div style={{ padding: "28px 10px 4px", zIndex: 1 }}>
+                  <p style={{ fontSize: "12px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 1px", lineHeight: 1.3 }}>
+                    {item.name || item.text}
+                  </p>
+                  {item.subtitle && <p style={{ fontSize: "10px", color: "#94a3b8", margin: 0 }}>{item.subtitle}</p>}
+                  {item.description && <p style={{ fontSize: "10px", color: "#64748b", margin: 0 }}>{item.description}</p>}
+                  <p style={{ fontSize: "10px", color: "#64748b", margin: "1px 0 0", fontStyle: "italic" }}>{item.category}</p>
+                </div>
+                {/* Image — fills remaining space */}
                 <div style={{
-                  height: "140px", background: "#0b1120",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  padding: "12px",
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "8px 12px",
                 }}>
                   {item.image ? (
-                    <img src={item.image} alt={item.name || item.text} style={{ maxWidth: "90%", maxHeight: "110px", objectFit: "contain" }} />
+                    <img src={item.image} alt={item.name || item.text} style={{ maxWidth: "90%", maxHeight: "100px", objectFit: "contain" }} />
                   ) : (
                     <span style={{ fontSize: "40px", opacity: 0.3 }}>🎁</span>
                   )}
                 </div>
-                {/* Info section — lighter background, compact */}
-                <div style={{ padding: "8px 10px 6px", background: "#1e293b", flex: 1, display: "flex", flexDirection: "column", minHeight: "70px" }}>
-                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3 }}>
-                    {item.name || item.text}
-                  </p>
-                  {item.subtitle && <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 1px" }}>{item.subtitle}</p>}
-                  {item.description && <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 1px" }}>{item.description}</p>}
-                  <p style={{ fontSize: "11px", color: "#64748b", margin: "1px 0 0", fontStyle: "italic" }}>{item.category}</p>
-                  {/* Price + Progress % */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", paddingTop: "6px" }}>
-                    <span style={{ fontSize: "14px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
-                    {itemProg !== null && <span style={{ fontSize: "12px", color: "#94a3b8" }}>{itemProg}%</span>}
-                  </div>
+                {/* Price + Progress % at bottom */}
+                <div style={{ padding: "4px 10px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
+                  {itemProg !== null && <span style={{ fontSize: "11px", color: "#94a3b8" }}>{itemProg}%</span>}
                 </div>
                 {/* Progress bar */}
                 {itemProg !== null && (
