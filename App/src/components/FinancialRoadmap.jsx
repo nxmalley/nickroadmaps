@@ -115,8 +115,6 @@ const INITIAL_LOG = [
   { date: "Jul 2026", netWorth: "27,129", salary: "100,000", debt: "15,206", credit: "770" },
 ];
 
-const NW_STORAGE_KEY = "financial-roadmap-networth-log";
-
 /* ─── Component ─── */
 export default function FinancialRoadmap() {
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -134,120 +132,95 @@ export default function FinancialRoadmap() {
   const [salaryDraft, setSalaryDraft] = useState({ year: "", title: "", employer: "", salary: "" });
   const [expandedYear, setExpandedYear] = useState(null);
 
-  // Salary history — persisted in localStorage
-  const [salaryHistory, setSalaryHistory] = useState(() => {
-    try {
-      const raw = localStorage.getItem("financial-roadmap-salary");
-      return raw ? JSON.parse(raw) : [
-        { year: "2026", title: "Jr Software Engineer", employer: "Leidos", salary: "100000" },
-        { year: "2025", title: "Service Desk Tier 1 Technician", employer: "Leidos", salary: "54142" },
-        { year: "2025", title: "IT Service Desk Analyst", employer: "SAIC", salary: "43700" },
-        { year: "2024–2025", title: "Support Specialist", employer: "Media Cross", salary: "35800" },
-      ];
-    } catch {
-      return [];
-    }
+  // Salary history — loaded from Upstash on mount
+  const [salaryHistory, setSalaryHistory] = useState([
+    { year: "2026", title: "Jr Software Engineer", employer: "Leidos", salary: "100000" },
+    { year: "2025", title: "Service Desk Tier 1 Technician", employer: "Leidos", salary: "54142" },
+    { year: "2025", title: "IT Service Desk Analyst", employer: "SAIC", salary: "43700" },
+    { year: "2024–2025", title: "Support Specialist", employer: "Media Cross", salary: "35800" },
+  ]);
+
+  // Account change log — loaded from Upstash on mount
+  const [accountChangeLog, setAccountChangeLog] = useState([]);
+
+  // Monthly earnings data — loaded from Upstash on mount
+  const [earningsData, setEarningsData] = useState({
+    "2021": { Jan: 617.44, Feb: 658.67, Mar: 515.26, Apr: 768.48, May: 1050.72, Jun: 769.37, Jul: 281.29, Aug: 542.32, Sep: 0, Oct: 0, Nov: 0, Dec: 0 },
+    "2022": { Jan: 0, Feb: 348.00, Mar: 0, Apr: 99.79, May: 382.69, Jun: 514.73, Jul: 510.46, Aug: 808.11, Sep: 0, Oct: 0, Nov: 0, Dec: 57.56 },
+    "2023": { Jan: 292.89, Feb: 87.05, Mar: 136.23, Apr: 0, May: 0, Jun: 0, Jul: 1331.26, Aug: 4410.78, Sep: 488.66, Oct: 0, Nov: 0, Dec: 31.05 },
+    "2024": { Jan: 39.62, Feb: 16.99, Mar: 1589.00, Apr: 0, May: 741.63, Jun: 505.44, Jul: 1381.74, Aug: 2063.65, Sep: 2341.34, Oct: 2453.22, Nov: 2452.78, Dec: 2452.72 },
+    "2025": { Jan: 2456.48, Feb: 2457.32, Mar: 3781.18, Apr: 2522.78, May: 3266.86, Jun: 3297.26, Jul: 3298.37, Aug: 3010.09, Sep: 3298.37, Oct: 5297.09, Nov: 3675.02, Dec: 5136.52 },
+    "2026": { Jan: 3568.24, Feb: 3939.40, Mar: 6194.06, Apr: 6011.25, May: 5059.40, Jun: 5209.34, Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0 },
   });
 
-  // Account change log — persisted in localStorage
-  const [accountChangeLog, setAccountChangeLog] = useState(() => {
-    try {
-      const raw = localStorage.getItem("financial-roadmap-account-log");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Monthly earnings data — persisted in localStorage
-  const [earningsData, setEarningsData] = useState(() => {
-    try {
-      const raw = localStorage.getItem("financial-roadmap-earnings");
-      return raw ? JSON.parse(raw) : {
-        "2021": { Jan: 617.44, Feb: 658.67, Mar: 515.26, Apr: 768.48, May: 1050.72, Jun: 769.37, Jul: 281.29, Aug: 542.32, Sep: 0, Oct: 0, Nov: 0, Dec: 0 },
-        "2022": { Jan: 0, Feb: 348.00, Mar: 0, Apr: 99.79, May: 382.69, Jun: 514.73, Jul: 510.46, Aug: 808.11, Sep: 0, Oct: 0, Nov: 0, Dec: 57.56 },
-        "2023": { Jan: 292.89, Feb: 87.05, Mar: 136.23, Apr: 0, May: 0, Jun: 0, Jul: 1331.26, Aug: 4410.78, Sep: 488.66, Oct: 0, Nov: 0, Dec: 31.05 },
-        "2024": { Jan: 39.62, Feb: 16.99, Mar: 1589.00, Apr: 0, May: 741.63, Jun: 505.44, Jul: 1381.74, Aug: 2063.65, Sep: 2341.34, Oct: 2453.22, Nov: 2452.78, Dec: 2452.72 },
-        "2025": { Jan: 2456.48, Feb: 2457.32, Mar: 3781.18, Apr: 2522.78, May: 3266.86, Jun: 3297.26, Jul: 3298.37, Aug: 3010.09, Sep: 3298.37, Oct: 5297.09, Nov: 3675.02, Dec: 5136.52 },
-        "2026": { Jan: 3568.24, Feb: 3939.40, Mar: 6194.06, Apr: 6011.25, May: 5059.40, Jun: 5209.34, Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0 },
-      };
-    } catch {
-      return {};
-    }
-  });
-
-  // Net worth log — persisted separately in localStorage
-  const [log, setLog] = useState(() => {
-    try {
-      const raw = localStorage.getItem(NW_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : INITIAL_LOG;
-    } catch {
-      return INITIAL_LOG;
-    }
-  });
+  // Net worth log — loaded from Upstash on mount
+  const [log, setLog] = useState(INITIAL_LOG);
   const [logDraft, setLogDraft] = useState({ date: "", netWorth: "", salary: "", debt: "", credit: "" });
 
-  // Future Implementation notes — persisted in localStorage
-  const [futureNotes, setFutureNotes] = useState(() => {
-    try {
-      const raw = localStorage.getItem("financial-roadmap-future-notes");
-      return raw ? JSON.parse(raw) : [
-        { id: "fn1", text: "Backdoor Roth IRA — research contribution limits and conversion steps for high earners" },
-        { id: "fn2", text: "Mega Backdoor Roth 401k — check if Empower plan allows after-tax contributions + in-plan conversion" },
-      ];
-    } catch {
-      return [];
-    }
-  });
+  // Future Implementation notes — loaded from Upstash on mount
+  const [futureNotes, setFutureNotes] = useState([
+    { id: "fn1", text: "Backdoor Roth IRA — research contribution limits and conversion steps for high earners" },
+    { id: "fn2", text: "Mega Backdoor Roth 401k — check if Empower plan allows after-tax contributions + in-plan conversion" },
+  ]);
   const [futureDraft, setFutureDraft] = useState("");
 
   // Investments & Accounts data — persisted in localStorage
-  const [accounts, setAccounts] = useState(() => {
-    try {
-      const raw = localStorage.getItem("financial-roadmap-accounts");
-      return raw ? JSON.parse(raw) : [
-        { id: "acc1", name: "NFCU", type: "Savings", badge: "savings", balance: 16625, limit: 12000, description: "High-yield savings. Credit card paid in full on 19th monthly.", metric: "limit", metricLabel: "of $12,000 limit" },
-        { id: "acc2", name: "USAA", type: "Savings", badge: "savings", balance: 25, limit: 4000, description: "Minimum balance to keep account open. Bills only.", metric: "limit", metricLabel: "of $4,000 limit" },
-        { id: "acc3", name: "Empower", type: "Roth 401k", badge: "retirement", balance: 1868, contribution: "6%", fund: "Vanguard Inst'l 500 Index Trust", vested: "100%", description: "Leidos employer plan. Immediate vesting.", metric: "contribution" },
-        { id: "acc4", name: "Fidelity", type: "Roth IRA", badge: "retirement", balance: 10704, fund: "FXAIX", returnPct: 8.72, description: "Roth IRA — S&P 500 index fund.", metric: "return" },
-        { id: "acc5", name: "Fidelity", type: "CMA (Taxable)", badge: "brokerage", balance: 4504, fund: "BRKB, SCHD + 4 more", monthlyContribution: 382, description: "Cash Management Account. $382/mo split evenly BRKB/SCHD.", metric: "contribution_monthly" },
-        { id: "acc6", name: "Capital One", type: "HYSA", badge: "savings", balance: 603, apy: "3.00%", description: "High-yield savings. 360 Performance.", metric: "apy" },
-        { id: "acc7", name: "Robinhood", type: "Crypto", badge: "speculative", balance: 531, fund: "DOGE, XRP", description: "Crypto holdings.", metric: "none" },
-      ];
-    } catch {
-      return [];
-    }
-  });
+  // Investments & Accounts — loaded from Upstash on mount
+  const [accounts, setAccounts] = useState([
+    { id: "acc1", name: "NFCU", type: "Savings", badge: "savings", balance: 16625, limit: 12000, description: "High-yield savings. Credit card paid in full on 19th monthly.", metric: "limit", metricLabel: "of $12,000 limit" },
+    { id: "acc2", name: "USAA", type: "Savings", badge: "savings", balance: 25, limit: 4000, description: "Minimum balance to keep account open. Bills only.", metric: "limit", metricLabel: "of $4,000 limit" },
+    { id: "acc3", name: "Empower", type: "Roth 401k", badge: "retirement", balance: 1868, contribution: "6%", fund: "Vanguard Inst'l 500 Index Trust", vested: "100%", description: "Leidos employer plan. Immediate vesting.", metric: "contribution" },
+    { id: "acc4", name: "Fidelity", type: "Roth IRA", badge: "retirement", balance: 10704, fund: "FXAIX", returnPct: 8.72, description: "Roth IRA — S&P 500 index fund.", metric: "return" },
+    { id: "acc5", name: "Fidelity", type: "CMA (Taxable)", badge: "brokerage", balance: 4504, fund: "BRKB, SCHD + 4 more", monthlyContribution: 382, description: "Cash Management Account. $382/mo split evenly BRKB/SCHD.", metric: "contribution_monthly" },
+    { id: "acc6", name: "Capital One", type: "HYSA", badge: "savings", balance: 603, apy: "3.00%", description: "High-yield savings. 360 Performance.", metric: "apy" },
+    { id: "acc7", name: "Robinhood", type: "Crypto", badge: "speculative", balance: 531, fund: "DOGE, XRP", description: "Crypto holdings.", metric: "none" },
+  ]);
 
-  // Completed/archived groups — persisted in localStorage
-  const [completedArchive, setCompletedArchive] = useState(() => {
-    try {
-      const raw = localStorage.getItem("financial-roadmap-completed");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Completed/archived groups — loaded from Upstash on mount
+  const [completedArchive, setCompletedArchive] = useState([]);
 
   // Earned rewards — lifestyle purchases earned through discipline
-  const [earnedItems, setEarnedItems] = useState(() => {
-    try {
-      const raw = localStorage.getItem("financial-roadmap-earned");
-      return raw ? JSON.parse(raw) : [
-        { id: "earn-suv", text: "Full Size SUV - Triple Matte or Satin Black", completed: false, completedAt: null },
-        { id: "earn-porsche", text: "Porsche 911", completed: false, completedAt: null },
-        { id: "earn-gshock", text: "G Shock: GM-2100BB-1A", completed: false, completedAt: null },
-        { id: "earn-tissot", text: "Tissot PRX Quartz (Steel and Black Dial)", completed: false, completedAt: null },
-        { id: "earn-seiko", text: "Seiko Alpinist SPB121", completed: false, completedAt: null },
-        { id: "earn-longines", text: "Longines: Master Collection Moonphase L2.919.4.78.3 (Brown Leather and White Dial) + Black Leather strap", completed: false, completedAt: null },
-        { id: "earn-tag", text: "Tag Heuer: Carrera Date WBN2111.BA0639 (Steel and Silver Dial)", completed: false, completedAt: null },
-        { id: "earn-rolex", text: "Rolex: Day-Date 40MM Everose Gold Slate Roman Ombre Dial 228235", completed: false, completedAt: null },
-      ];
-    } catch {
-      return [];
-    }
-  });
+  const [earnedItems, setEarnedItems] = useState([
+    { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 85000, image: "/GMC_Yukon.png", completed: false, completedAt: null },
+    { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 248000, image: "/Maserati_McPura.png", completed: false, completedAt: null },
+    { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", completed: false, completedAt: null },
+    { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 350, image: "/GShock.png", completed: false, completedAt: null },
+    { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 395, image: "/Tissot_PRX.png", completed: false, completedAt: null },
+    { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 725, image: "/Seiko_Alpinist.png", completed: false, completedAt: null },
+    { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 2750, image: "/Longines_MoonPhase.png", completed: false, completedAt: null },
+    { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3600, image: "/Tag_CarreraDate.png", completed: false, completedAt: null },
+    { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 45635, image: "/Rolex_Everose.png", completed: false, completedAt: null },
+  ]);
   const [earnedDraft, setEarnedDraft] = useState("");
+  const [earnedViewMode, setEarnedViewMode] = useState("grid"); // "grid" | "list"
+  const [earnedSort, setEarnedSort] = useState("custom"); // "custom" | "price-asc" | "price-desc" | "name"
+
+  // Migration map for old flat-text earned items → new rich format
+  const EARNED_MIGRATION_MAP = {
+    "earn-suv": { name: "GMC Yukon Denali", category: "Vehicle", price: 85000, image: "/GMC_Yukon.png" },
+    "earn-porsche": { name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png" },
+    "earn-gshock": { name: "G-Shock GM-2100BB-1A", category: "Watch", price: 350, image: "/GShock.png" },
+    "earn-tissot": { name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 395, image: "/Tissot_PRX.png" },
+    "earn-seiko": { name: "Seiko Alpinist SPB121", category: "Watch", price: 725, image: "/Seiko_Alpinist.png" },
+    "earn-longines": { name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 2750, image: "/Longines_MoonPhase.png" },
+    "earn-tag": { name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3600, image: "/Tag_CarreraDate.png" },
+    "earn-rolex": { name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 45635, image: "/Rolex_Everose.png" },
+  };
+
+  function migrateEarnedItems(items) {
+    if (!Array.isArray(items)) return items;
+    // If items already have 'name' field, no migration needed
+    if (items.length > 0 && items[0].name) return items;
+    // Migrate old format
+    return items.map(item => {
+      const mapped = EARNED_MIGRATION_MAP[item.id];
+      if (mapped) {
+        return { ...item, ...mapped };
+      }
+      // Unknown item — convert text to name
+      return { ...item, name: item.text || "Unknown Reward", category: "Other", price: 0, image: null };
+    });
+  }
 
   // Load persisted data from server on mount
   useEffect(() => {
@@ -264,7 +237,7 @@ export default function FinancialRoadmap() {
             if (data.salaryHistory) setSalaryHistory(data.salaryHistory);
             if (data.earningsData) setEarningsData(data.earningsData);
             if (data.futureNotes) setFutureNotes(data.futureNotes);
-            if (data.earnedItems) setEarnedItems(data.earnedItems);
+            if (data.earnedItems) setEarnedItems(migrateEarnedItems(data.earnedItems));
             if (data.completedArchive) setCompletedArchive(data.completedArchive);
           }
         }
@@ -278,21 +251,11 @@ export default function FinancialRoadmap() {
   useEffect(() => {
     if (!dataLoaded) return; // Don't save before initial load completes
     const data = { log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, completedArchive };
-    // Save to localStorage as immediate fallback
-    try { localStorage.setItem("financial-roadmap-networth-log", JSON.stringify(log)); } catch { /* ignore */ }
-    try { localStorage.setItem("financial-roadmap-account-log", JSON.stringify(accountChangeLog)); } catch { /* ignore */ }
-    try { localStorage.setItem("financial-roadmap-accounts", JSON.stringify(accounts)); } catch { /* ignore */ }
-    try { localStorage.setItem("financial-roadmap-salary", JSON.stringify(salaryHistory)); } catch { /* ignore */ }
-    try { localStorage.setItem("financial-roadmap-earnings", JSON.stringify(earningsData)); } catch { /* ignore */ }
-    try { localStorage.setItem("financial-roadmap-future-notes", JSON.stringify(futureNotes)); } catch { /* ignore */ }
-    try { localStorage.setItem("financial-roadmap-earned", JSON.stringify(earnedItems)); } catch { /* ignore */ }
-    try { localStorage.setItem("financial-roadmap-completed", JSON.stringify(completedArchive)); } catch { /* ignore */ }
-    // Sync to server (fire and forget — don't block UI)
     fetch('/api/financial-data', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    }).catch(() => { /* silent — localStorage is the fallback */ });
+    }).catch(() => { /* silent */ });
   }, [dataLoaded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, completedArchive]);
 
   // Auto-archive fully completed groups
@@ -395,7 +358,7 @@ export default function FinancialRoadmap() {
 
   function addEarnedItem() {
     if (!earnedDraft.trim()) return;
-    setEarnedItems(prev => [...prev, { id: `earn-${Date.now()}`, text: earnedDraft.trim(), completed: false, completedAt: null }]);
+    setEarnedItems(prev => [...prev, { id: `earn-${Date.now()}`, name: earnedDraft.trim(), category: "Other", price: 0, image: null, completed: false, completedAt: null }]);
     setEarnedDraft("");
   }
 
@@ -468,7 +431,7 @@ export default function FinancialRoadmap() {
             borderLeft: activeView === "earned" ? "3px solid #0F6E56" : "3px solid transparent",
             marginBottom: "12px",
           }}>
-            <span>Earned not Given 💯!</span>
+            <span>Earned not Given 🎁</span>
           </button>
           <p style={{ fontSize: "14px", fontStyle: "italic", color: "#64748b", margin: 0, lineHeight: 1.5, padding: "0 8px" }}>
             &ldquo;Discipline today, freedom tomorrow.&rdquo;
@@ -769,64 +732,306 @@ export default function FinancialRoadmap() {
   function renderEarned() {
     const pending = earnedItems.filter(item => !item.completed);
     const completed = earnedItems.filter(item => item.completed);
+    const activeList = earnedTab === "pending" ? pending : completed;
+
+    // Sort logic
+    const sortedList = [...activeList].sort((a, b) => {
+      if (earnedSort === "price-asc") return (a.price || 0) - (b.price || 0);
+      if (earnedSort === "price-desc") return (b.price || 0) - (a.price || 0);
+      if (earnedSort === "name") return (a.name || a.text || "").localeCompare(b.name || b.text || "");
+      return 0; // custom — original order
+    });
+
+    // Stats
+    const totalValue = earnedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+    const totalRewards = earnedItems.length;
+    const completedCount = completed.length;
+
+    // Ring SVG for total rewards
+    const ringRadius = 38;
+    const ringCircumference = 2 * Math.PI * ringRadius;
+    const ringProgress = totalRewards > 0 ? (completedCount / totalRewards) : 0;
+    const ringOffset = ringCircumference - ringProgress * ringCircumference;
 
     return (
-      <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 8px" }}>Earned not Given 💯!</h3>
-        <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 16px" }}>Lifestyle purchases earned through financial discipline. Check off when you gift it to yourself.</p>
-
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", borderBottom: "1px solid #334155", paddingBottom: "8px" }}>
-          <button onClick={() => setEarnedTab("pending")} style={{ background: "none", border: "none", padding: "4px 0", fontSize: "13px", cursor: "pointer", color: earnedTab === "pending" ? "#4ade80" : "#94a3b8", fontWeight: earnedTab === "pending" ? 500 : 400, borderBottom: earnedTab === "pending" ? "2px solid #0F6E56" : "2px solid transparent", marginBottom: "-9px" }}>
-            Pending ({pending.length})
-          </button>
-          <button onClick={() => setEarnedTab("completed")} style={{ background: "none", border: "none", padding: "4px 0", fontSize: "13px", cursor: "pointer", color: earnedTab === "completed" ? "#4ade80" : "#94a3b8", fontWeight: earnedTab === "completed" ? 500 : 400, borderBottom: earnedTab === "completed" ? "2px solid #0F6E56" : "2px solid transparent", marginBottom: "-9px" }}>
-            Completed ({completed.length})
-          </button>
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* ═══ Header ═══ */}
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: "15px", color: "#94a3b8", margin: "0 0 4px" }}>Welcome back, Nick 👋</p>
+          <h2 style={{ fontSize: "28px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px" }}>
+            Earned not Given 🎁
+          </h2>
+          <p style={{ fontSize: "14px", color: "#64748b", margin: 0, lineHeight: 1.6 }}>
+            Lifestyle purchases earned through financial discipline.<br />
+            Check off when you get it to yourself.
+          </p>
         </div>
 
-        {earnedTab === "pending" && (
-          <>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-              {pending.length === 0 && <p style={{ fontSize: "13px", color: "#64748b" }}>No pending rewards. Add something you are working toward.</p>}
-              {pending.map(item => (
-                <div key={item.id} style={{ padding: "12px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155", display: "flex", alignItems: "center", gap: "12px" }}>
+        {/* ═══ Stats Bar ═══ */}
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", background: "#1e293b", borderRadius: "12px", padding: "20px 28px", border: "1px solid #334155" }}>
+          {/* Ring */}
+          <div style={{ position: "relative", width: "90px", height: "90px", flexShrink: 0 }}>
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r={ringRadius} fill="none" stroke="#334155" strokeWidth="6" />
+              <circle cx="45" cy="45" r={ringRadius} fill="none" stroke="#0F6E56" strokeWidth="6"
+                strokeDasharray={ringCircumference} strokeDashoffset={ringOffset}
+                strokeLinecap="round" transform="rotate(-90 45 45)" style={{ transition: "stroke-dashoffset 0.4s ease" }}
+              />
+            </svg>
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: "22px", fontWeight: 700, color: "#4ade80" }}>{totalRewards}</span>
+              <span style={{ fontSize: "10px", color: "#94a3b8" }}>Total Rewards</span>
+            </div>
+          </div>
+
+          {/* Total Value */}
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "24px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>${totalValue.toLocaleString()}</p>
+            <p style={{ fontSize: "12px", color: "#94a3b8", margin: "4px 0 0" }}>Total Value</p>
+          </div>
+
+          {/* Completed */}
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "24px", fontWeight: 700, color: "#f1f5f9", margin: 0 }}>{completedCount}</p>
+            <p style={{ fontSize: "12px", color: "#94a3b8", margin: "4px 0 0" }}>Completed</p>
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: "1px", height: "60px", background: "#334155", margin: "0 12px" }} />
+
+          {/* Discipline Pays */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "32px" }}>🏆</span>
+            <div>
+              <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Discipline Pays</p>
+              <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0, maxWidth: "220px", lineHeight: 1.4 }}>
+                Every reward on this list represents choices you made today.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ Tabs + Controls Row ═══ */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: "24px", borderBottom: "2px solid #334155", paddingBottom: "0" }}>
+            <button onClick={() => setEarnedTab("pending")} style={{
+              background: "none", border: "none", padding: "8px 0", fontSize: "14px", cursor: "pointer",
+              color: earnedTab === "pending" ? "#4ade80" : "#94a3b8",
+              fontWeight: earnedTab === "pending" ? 600 : 400,
+              borderBottom: earnedTab === "pending" ? "2px solid #4ade80" : "2px solid transparent",
+              marginBottom: "-2px",
+            }}>
+              Pending ({pending.length})
+            </button>
+            <button onClick={() => setEarnedTab("completed")} style={{
+              background: "none", border: "none", padding: "8px 0", fontSize: "14px", cursor: "pointer",
+              color: earnedTab === "completed" ? "#4ade80" : "#94a3b8",
+              fontWeight: earnedTab === "completed" ? 600 : 400,
+              borderBottom: earnedTab === "completed" ? "2px solid #4ade80" : "2px solid transparent",
+              marginBottom: "-2px",
+            }}>
+              Completed ({completed.length})
+            </button>
+          </div>
+
+          {/* Sort + View Toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "12px", color: "#94a3b8" }}>Sort by:</span>
+              <select value={earnedSort} onChange={e => setEarnedSort(e.target.value)} style={{
+                background: "#1e293b", border: "1px solid #334155", borderRadius: "6px",
+                padding: "6px 10px", fontSize: "12px", color: "#e2e8f0", cursor: "pointer",
+              }}>
+                <option value="custom">Custom</option>
+                <option value="price-desc">Price (High → Low)</option>
+                <option value="price-asc">Price (Low → High)</option>
+                <option value="name">Name</option>
+              </select>
+            </div>
+            {/* View toggle */}
+            <div style={{ display: "flex", background: "#1e293b", borderRadius: "6px", border: "1px solid #334155", overflow: "hidden" }}>
+              <button onClick={() => setEarnedViewMode("grid")} style={{
+                background: earnedViewMode === "grid" ? "#334155" : "transparent", border: "none",
+                padding: "6px 10px", cursor: "pointer", color: earnedViewMode === "grid" ? "#4ade80" : "#64748b", fontSize: "14px",
+              }}>⊞</button>
+              <button onClick={() => setEarnedViewMode("list")} style={{
+                background: earnedViewMode === "list" ? "#334155" : "transparent", border: "none",
+                padding: "6px 10px", cursor: "pointer", color: earnedViewMode === "list" ? "#4ade80" : "#64748b", fontSize: "14px",
+              }}>≡</button>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ Rewards Grid / List ═══ */}
+        {earnedViewMode === "grid" ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+            {sortedList.length === 0 && (
+              <p style={{ fontSize: "13px", color: "#64748b", gridColumn: "1 / -1" }}>
+                {earnedTab === "pending" ? "No pending rewards. Add something you're working toward." : "Nothing completed yet. Keep grinding."}
+              </p>
+            )}
+            {sortedList.map(item => (
+              <div key={item.id} style={{
+                background: "#1e293b", borderRadius: "12px", border: "1px solid #334155",
+                overflow: "hidden", display: "flex", flexDirection: "column", position: "relative",
+                opacity: item.completed ? 0.7 : 1,
+              }}>
+                {/* Status badge */}
+                <span style={{
+                  position: "absolute", top: "10px", right: "10px",
+                  background: item.completed ? "#0F6E56" : "#1e40af",
+                  color: "#fff", fontSize: "10px", fontWeight: 600,
+                  padding: "3px 8px", borderRadius: "4px", letterSpacing: "0.3px",
+                }}>
+                  {item.completed ? "Earned" : "Pending"}
+                </span>
+                {/* Checkbox */}
+                {!item.completed && (
                   <div
                     onClick={() => completeEarnedItem(item.id)}
-                    style={{ width: "16px", height: "16px", borderRadius: "3px", border: "1.5px solid #475569", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                    style={{
+                      position: "absolute", top: "10px", left: "10px",
+                      width: "18px", height: "18px", borderRadius: "4px",
+                      border: "1.5px solid #475569", background: "rgba(15,23,42,0.6)",
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      zIndex: 2,
+                    }}
+                    title="Mark as earned"
                   />
-                  <span style={{ fontSize: "13px", color: "#e2e8f0", flex: 1 }}>{item.text}</span>
-                  <button onClick={() => removeEarnedItem(item.id)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "14px", padding: "0 4px", flexShrink: 0 }}>×</button>
+                )}
+                {item.completed && (
+                  <div style={{
+                    position: "absolute", top: "10px", left: "10px",
+                    width: "18px", height: "18px", borderRadius: "4px",
+                    border: "1.5px solid #0F6E56", background: "#0F6E56",
+                    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2,
+                  }}>
+                    <span style={{ fontSize: "11px", color: "#fff", fontWeight: 700 }}>✓</span>
+                  </div>
+                )}
+                {/* Image */}
+                <div style={{ height: "140px", background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px" }}>
+                  {item.image ? (
+                    <img src={item.image} alt={item.name || item.text} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                  ) : (
+                    <span style={{ fontSize: "40px", opacity: 0.3 }}>🎁</span>
+                  )}
                 </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <input
-                value={earnedDraft}
-                onChange={e => setEarnedDraft(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") addEarnedItem(); }}
-                placeholder="Add a reward you're working toward..."
-                style={{ flex: 1, padding: "10px 14px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0" }}
-              />
-              <button onClick={addEarnedItem} style={{ padding: "10px 16px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "1px solid #0F6E56", background: "transparent", color: "#4ade80", cursor: "pointer" }}>Add</button>
-            </div>
-          </>
-        )}
-
-        {earnedTab === "completed" && (
+                {/* Info */}
+                <div style={{ padding: "12px 14px", flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: 0, lineHeight: 1.3 }}>
+                    {item.name || item.text}
+                  </p>
+                  {item.subtitle && (
+                    <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>{item.subtitle}</p>
+                  )}
+                  {item.description && (
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{item.description}</p>
+                  )}
+                  {item.category && (
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0", fontStyle: "italic" }}>{item.category}</p>
+                  )}
+                </div>
+                {/* Footer: Price + Progress */}
+                <div style={{ padding: "0 14px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#4ade80" }}>
+                    ${(item.price || 0).toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#64748b" }}>
+                    {item.completed ? "100%" : "0%"}
+                  </span>
+                </div>
+                {/* Progress bar */}
+                <div style={{ height: "3px", background: "#334155" }}>
+                  <div style={{ height: "100%", width: item.completed ? "100%" : "0%", background: "#0F6E56", transition: "width 0.3s ease" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* List view */
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {completed.length === 0 && <p style={{ fontSize: "13px", color: "#64748b" }}>Nothing completed yet. Keep grinding.</p>}
-            {completed.map(item => (
-              <div key={item.id} style={{ padding: "12px 16px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155", display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "16px", height: "16px", borderRadius: "3px", border: "1.5px solid #0F6E56", background: "#0F6E56", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ fontSize: "10px", color: "#fff" }}>✓</span>
+            {sortedList.length === 0 && (
+              <p style={{ fontSize: "13px", color: "#64748b" }}>
+                {earnedTab === "pending" ? "No pending rewards." : "Nothing completed yet."}
+              </p>
+            )}
+            {sortedList.map(item => (
+              <div key={item.id} style={{
+                padding: "12px 16px", background: "#1e293b", borderRadius: "10px",
+                border: "1px solid #334155", display: "flex", alignItems: "center", gap: "14px",
+              }}>
+                {/* Checkbox */}
+                <div
+                  onClick={() => !item.completed && completeEarnedItem(item.id)}
+                  style={{
+                    width: "18px", height: "18px", borderRadius: "4px", flexShrink: 0,
+                    border: item.completed ? "1.5px solid #0F6E56" : "1.5px solid #475569",
+                    background: item.completed ? "#0F6E56" : "transparent",
+                    cursor: item.completed ? "default" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  {item.completed && <span style={{ fontSize: "11px", color: "#fff", fontWeight: 700 }}>✓</span>}
                 </div>
-                <span style={{ fontSize: "13px", color: "#64748b", textDecoration: "line-through", flex: 1 }}>{item.text}</span>
-                <span style={{ fontSize: "11px", color: "#475569", flexShrink: 0 }}>{item.completedAt ? new Date(item.completedAt).toLocaleDateString() : ""}</span>
+                {/* Thumbnail */}
+                {item.image && (
+                  <div style={{ width: "44px", height: "44px", borderRadius: "6px", background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                    <img src={item.image} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                  </div>
+                )}
+                {/* Text */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: "13px", fontWeight: 500, color: item.completed ? "#64748b" : "#e2e8f0", margin: 0, textDecoration: item.completed ? "line-through" : "none" }}>
+                    {item.name || item.text}
+                  </p>
+                  {item.category && <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0" }}>{item.category}</p>}
+                </div>
+                {/* Price */}
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "#4ade80", flexShrink: 0 }}>
+                  ${(item.price || 0).toLocaleString()}
+                </span>
+                {/* Badge */}
+                <span style={{
+                  fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "4px",
+                  background: item.completed ? "#0F6E56" : "#1e40af", color: "#fff", flexShrink: 0,
+                }}>
+                  {item.completed ? "Earned" : "Pending"}
+                </span>
+                {/* Delete */}
+                <button onClick={() => removeEarnedItem(item.id)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: "16px", padding: "0 4px", flexShrink: 0 }}>×</button>
               </div>
             ))}
           </div>
         )}
+
+        {/* ═══ Add Reward Footer Bar ═══ */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: "16px",
+          background: "#1e293b", borderRadius: "12px", padding: "16px 24px",
+          border: "1px solid #334155",
+        }}>
+          <span style={{ fontSize: "28px" }}>🎁</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px" }}>Add a reward you&apos;re working toward...</p>
+            <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>Add any goal that motivates you to keep building your future.</p>
+          </div>
+          <button onClick={() => {
+            const name = prompt("Reward name:");
+            if (!name) return;
+            const category = prompt("Category (Vehicle / Watch / Tech / Other):", "Watch");
+            const priceStr = prompt("Price ($):", "0");
+            const price = parseFloat(priceStr) || 0;
+            setEarnedItems(prev => [...prev, { id: `earn-${Date.now()}`, name, category: category || "Other", price, image: null, completed: false, completedAt: null }]);
+          }} style={{
+            padding: "10px 20px", fontSize: "13px", fontWeight: 600, borderRadius: "8px",
+            border: "1px solid #0F6E56", background: "transparent", color: "#4ade80", cursor: "pointer",
+            display: "flex", alignItems: "center", gap: "6px",
+          }}>
+            + Add Reward
+          </button>
+        </div>
       </div>
     );
   }
