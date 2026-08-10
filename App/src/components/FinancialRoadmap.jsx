@@ -771,19 +771,21 @@ export default function FinancialRoadmap() {
 
     // Progress calculation per item based on goalType
     function getItemProgress(item) {
-      if (item.completed) return 100;
+      if (item.completed) return "100.00";
       if (!item.goalType || item.goalType === "none") return null;
       if (item.goalType === "debtfree") {
         const debtStart = item.debtStart || 45000;
         const currentDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : debtStart;
         const paid = debtStart - currentDebt;
-        return Math.max(0, Math.min(Math.round((paid / debtStart) * 100), 100));
+        const pct = Math.max(0, Math.min((paid / debtStart) * 100, 100));
+        return pct.toFixed(2);
       }
       if (item.goalType === "networth") {
         const target = item.goalTarget || 1;
-        return Math.max(0, Math.min(Math.round((currentNw / target) * 100), 100));
+        const pct = Math.max(0, Math.min((currentNw / target) * 100, 100));
+        return pct.toFixed(2);
       }
-      return 0;
+      return "0.00";
     }
 
     return (
@@ -973,7 +975,7 @@ export default function FinancialRoadmap() {
                 {/* Progress bar — only if item has a goal */}
                 {itemProg !== null && (
                   <div style={{ height: "3px", background: "#334155" }}>
-                    <div style={{ height: "100%", width: `${itemProg}%`, background: "#0F6E56", transition: "width 0.3s ease" }} />
+                    <div style={{ height: "100%", width: `${parseFloat(itemProg)}%`, background: "#0F6E56", transition: "width 0.3s ease" }} />
                   </div>
                 )}
               </div>
