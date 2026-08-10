@@ -900,7 +900,7 @@ export default function FinancialRoadmap() {
 
         {/* ═══ Rewards Grid / List ═══ */}
         {earnedViewMode === "grid" ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px" }}>
             {sortedList.length === 0 && (
               <p style={{ fontSize: "13px", color: "#64748b", gridColumn: "1 / -1" }}>
                 {earnedTab === "pending" ? "No pending rewards. Add something you're working toward." : "Nothing completed yet. Keep grinding."}
