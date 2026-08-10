@@ -181,15 +181,15 @@ export default function FinancialRoadmap() {
 
   // Earned rewards — lifestyle purchases earned through discipline
   const [earnedItems, setEarnedItems] = useState([
-    { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 85000, image: "/GMC_Yukon.png", completed: false, completedAt: null },
-    { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 248000, image: "/Maserati_McPura.png", completed: false, completedAt: null },
-    { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", completed: false, completedAt: null },
-    { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 350, image: "/GShock.png", completed: false, completedAt: null },
-    { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 395, image: "/Tissot_PRX.png", completed: false, completedAt: null },
-    { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 725, image: "/Seiko_Alpinist.png", completed: false, completedAt: null },
-    { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 2750, image: "/Longines_MoonPhase.png", completed: false, completedAt: null },
-    { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3600, image: "/Tag_CarreraDate.png", completed: false, completedAt: null },
-    { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 45635, image: "/Rolex_Everose.png", completed: false, completedAt: null },
+    { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0, completed: false, completedAt: null },
+    { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 225000, image: "/Maserati_McPura.png", goalType: "networth", goalTarget: 2000000, completed: false, completedAt: null },
+    { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3000000, completed: false, completedAt: null },
+    { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000, completed: false, completedAt: null },
+    { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000, completed: false, completedAt: null },
+    { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000, completed: false, completedAt: null },
+    { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000, completed: false, completedAt: null },
+    { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000, completed: false, completedAt: null },
+    { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000, completed: false, completedAt: null },
   ]);
   const [earnedDraft, setEarnedDraft] = useState("");
   const [earnedViewMode, setEarnedViewMode] = useState("grid"); // "grid" | "list"
@@ -197,14 +197,14 @@ export default function FinancialRoadmap() {
 
   // Migration map for old flat-text earned items → new rich format
   const EARNED_MIGRATION_MAP = {
-    "earn-suv": { name: "GMC Yukon Denali", category: "Vehicle", price: 85000, image: "/GMC_Yukon.png" },
-    "earn-porsche": { name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png" },
-    "earn-gshock": { name: "G-Shock GM-2100BB-1A", category: "Watch", price: 350, image: "/GShock.png" },
-    "earn-tissot": { name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 395, image: "/Tissot_PRX.png" },
-    "earn-seiko": { name: "Seiko Alpinist SPB121", category: "Watch", price: 725, image: "/Seiko_Alpinist.png" },
-    "earn-longines": { name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 2750, image: "/Longines_MoonPhase.png" },
-    "earn-tag": { name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3600, image: "/Tag_CarreraDate.png" },
-    "earn-rolex": { name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 45635, image: "/Rolex_Everose.png" },
+    "earn-suv": { name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0 },
+    "earn-porsche": { name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3000000 },
+    "earn-gshock": { name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+    "earn-tissot": { name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+    "earn-seiko": { name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000 },
+    "earn-longines": { name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000 },
+    "earn-tag": { name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000 },
+    "earn-rolex": { name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000 },
   };
 
   function migrateEarnedItems(items) {
@@ -378,7 +378,7 @@ export default function FinancialRoadmap() {
   const donutOffset = donutCircumference - (goalPct / 100) * donutCircumference;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)", background: "#0f172a" }}>
+    <div style={{ display: "flex", height: "100%", fontFamily: "var(--font-sans)", background: "#0f172a" }}>
       {/* ═══ Left Sidebar ═══ */}
       <aside style={{
         width: "200px",
@@ -388,9 +388,7 @@ export default function FinancialRoadmap() {
         display: "flex",
         flexDirection: "column",
         padding: "20px 0",
-        position: "sticky",
-        top: 0,
-        height: "100vh",
+        height: "100%",
         overflowY: "auto",
       }}>
         {/* Nav items */}
@@ -440,7 +438,7 @@ export default function FinancialRoadmap() {
       </aside>
 
       {/* ═══ Main Content Area ═══ */}
-      <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", minHeight: "100vh" }}>
+      <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", height: "100%" }}>
         {/* Header */}
         <p style={{ fontSize: "15px", color: "#94a3b8", margin: "0 0 4px" }}>Welcome back, Nick 👋</p>
         <h2 style={{ fontSize: "24px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>
@@ -739,7 +737,7 @@ export default function FinancialRoadmap() {
       if (earnedSort === "price-asc") return (a.price || 0) - (b.price || 0);
       if (earnedSort === "price-desc") return (b.price || 0) - (a.price || 0);
       if (earnedSort === "name") return (a.name || a.text || "").localeCompare(b.name || b.text || "");
-      return 0; // custom — original order
+      return 0;
     });
 
     // Stats
@@ -747,11 +745,28 @@ export default function FinancialRoadmap() {
     const totalRewards = earnedItems.length;
     const completedCount = completed.length;
 
-    // Ring SVG for total rewards
+    // Ring SVG
     const ringRadius = 38;
     const ringCircumference = 2 * Math.PI * ringRadius;
     const ringProgress = totalRewards > 0 ? (completedCount / totalRewards) : 0;
     const ringOffset = ringCircumference - ringProgress * ringCircumference;
+
+    // Progress calculation per item based on goalType
+    function getItemProgress(item) {
+      if (item.completed) return 100;
+      if (!item.goalType || item.goalType === "none") return null;
+      if (item.goalType === "debtfree") {
+        const debtStart = item.debtStart || 45000;
+        const currentDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : debtStart;
+        const paid = debtStart - currentDebt;
+        return Math.max(0, Math.min(Math.round((paid / debtStart) * 100), 100));
+      }
+      if (item.goalType === "networth") {
+        const target = item.goalTarget || 1;
+        return Math.max(0, Math.min(Math.round((currentNw / target) * 100), 100));
+      }
+      return 0;
+    }
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -871,7 +886,9 @@ export default function FinancialRoadmap() {
                 {earnedTab === "pending" ? "No pending rewards. Add something you're working toward." : "Nothing completed yet. Keep grinding."}
               </p>
             )}
-            {sortedList.map(item => (
+            {sortedList.map(item => {
+              const itemProg = getItemProgress(item);
+              return (
               <div key={item.id} style={{
                 background: "#1e293b", borderRadius: "12px", border: "1px solid #334155",
                 overflow: "hidden", display: "flex", flexDirection: "column", position: "relative",
@@ -879,10 +896,10 @@ export default function FinancialRoadmap() {
               }}>
                 {/* Status badge */}
                 <span style={{
-                  position: "absolute", top: "10px", right: "10px",
+                  position: "absolute", top: "8px", right: "8px",
                   background: item.completed ? "#0F6E56" : "#1e40af",
                   color: "#fff", fontSize: "10px", fontWeight: 600,
-                  padding: "3px 8px", borderRadius: "4px", letterSpacing: "0.3px",
+                  padding: "3px 8px", borderRadius: "4px", letterSpacing: "0.3px", zIndex: 2,
                 }}>
                   {item.completed ? "Earned" : "Pending"}
                 </span>
@@ -891,18 +908,17 @@ export default function FinancialRoadmap() {
                   <div
                     onClick={() => completeEarnedItem(item.id)}
                     style={{
-                      position: "absolute", top: "10px", left: "10px",
+                      position: "absolute", top: "8px", left: "8px",
                       width: "18px", height: "18px", borderRadius: "4px",
                       border: "1.5px solid #475569", background: "rgba(15,23,42,0.6)",
-                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                      zIndex: 2,
+                      cursor: "pointer", zIndex: 2,
                     }}
                     title="Mark as earned"
                   />
                 )}
                 {item.completed && (
                   <div style={{
-                    position: "absolute", top: "10px", left: "10px",
+                    position: "absolute", top: "8px", left: "8px",
                     width: "18px", height: "18px", borderRadius: "4px",
                     border: "1.5px solid #0F6E56", background: "#0F6E56",
                     display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2,
@@ -910,44 +926,40 @@ export default function FinancialRoadmap() {
                     <span style={{ fontSize: "11px", color: "#fff", fontWeight: 700 }}>✓</span>
                   </div>
                 )}
-                {/* Image */}
-                <div style={{ height: "140px", background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px" }}>
+                {/* Image — dominant area */}
+                <div style={{
+                  flex: 1, minHeight: "160px", background: "linear-gradient(180deg, #1a2332 0%, #0f172a 100%)",
+                  display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+                }}>
                   {item.image ? (
-                    <img src={item.image} alt={item.name || item.text} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                    <img src={item.image} alt={item.name || item.text} style={{ maxHeight: "130px", maxWidth: "100%", objectFit: "contain" }} />
                   ) : (
-                    <span style={{ fontSize: "40px", opacity: 0.3 }}>🎁</span>
+                    <span style={{ fontSize: "48px", opacity: 0.3 }}>🎁</span>
                   )}
                 </div>
-                {/* Info */}
-                <div style={{ padding: "12px 14px", flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: 0, lineHeight: 1.3 }}>
+                {/* Info — compact */}
+                <div style={{ padding: "10px 12px 8px", background: "#1e293b" }}>
+                  <p style={{ fontSize: "12px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {item.name || item.text}
                   </p>
-                  {item.subtitle && (
-                    <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>{item.subtitle}</p>
-                  )}
-                  {item.description && (
-                    <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{item.description}</p>
-                  )}
-                  {item.category && (
-                    <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0", fontStyle: "italic" }}>{item.category}</p>
-                  )}
+                  {item.subtitle && <p style={{ fontSize: "10px", color: "#94a3b8", margin: "0 0 1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.subtitle}</p>}
+                  {item.description && <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.description}</p>}
+                  <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0", fontStyle: "italic" }}>{item.category}</p>
                 </div>
-                {/* Footer: Price + Progress */}
-                <div style={{ padding: "0 14px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#4ade80" }}>
-                    ${(item.price || 0).toLocaleString()}
-                  </span>
-                  <span style={{ fontSize: "11px", color: "#64748b" }}>
-                    {item.completed ? "100%" : "0%"}
-                  </span>
+                {/* Price + Progress % */}
+                <div style={{ padding: "0 12px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#1e293b" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
+                  {itemProg !== null && <span style={{ fontSize: "11px", color: "#94a3b8" }}>{itemProg}%</span>}
                 </div>
-                {/* Progress bar */}
-                <div style={{ height: "3px", background: "#334155" }}>
-                  <div style={{ height: "100%", width: item.completed ? "100%" : "0%", background: "#0F6E56", transition: "width 0.3s ease" }} />
-                </div>
+                {/* Progress bar — only if item has a goal */}
+                {itemProg !== null && (
+                  <div style={{ height: "3px", background: "#334155" }}>
+                    <div style={{ height: "100%", width: `${itemProg}%`, background: "#0F6E56", transition: "width 0.3s ease" }} />
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           /* List view */
@@ -957,12 +969,13 @@ export default function FinancialRoadmap() {
                 {earnedTab === "pending" ? "No pending rewards." : "Nothing completed yet."}
               </p>
             )}
-            {sortedList.map(item => (
+            {sortedList.map(item => {
+              const prog = getItemProgress(item);
+              return (
               <div key={item.id} style={{
                 padding: "12px 16px", background: "#1e293b", borderRadius: "10px",
                 border: "1px solid #334155", display: "flex", alignItems: "center", gap: "14px",
               }}>
-                {/* Checkbox */}
                 <div
                   onClick={() => !item.completed && completeEarnedItem(item.id)}
                   style={{
@@ -975,34 +988,31 @@ export default function FinancialRoadmap() {
                 >
                   {item.completed && <span style={{ fontSize: "11px", color: "#fff", fontWeight: 700 }}>✓</span>}
                 </div>
-                {/* Thumbnail */}
                 {item.image && (
                   <div style={{ width: "44px", height: "44px", borderRadius: "6px", background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
                     <img src={item.image} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
                   </div>
                 )}
-                {/* Text */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: "13px", fontWeight: 500, color: item.completed ? "#64748b" : "#e2e8f0", margin: 0, textDecoration: item.completed ? "line-through" : "none" }}>
                     {item.name || item.text}
                   </p>
                   {item.category && <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0" }}>{item.category}</p>}
                 </div>
-                {/* Price */}
                 <span style={{ fontSize: "13px", fontWeight: 600, color: "#4ade80", flexShrink: 0 }}>
                   ${(item.price || 0).toLocaleString()}
                 </span>
-                {/* Badge */}
+                {prog !== null && <span style={{ fontSize: "11px", color: "#94a3b8", flexShrink: 0 }}>{prog}%</span>}
                 <span style={{
                   fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "4px",
                   background: item.completed ? "#0F6E56" : "#1e40af", color: "#fff", flexShrink: 0,
                 }}>
                   {item.completed ? "Earned" : "Pending"}
                 </span>
-                {/* Delete */}
                 <button onClick={() => removeEarnedItem(item.id)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: "16px", padding: "0 4px", flexShrink: 0 }}>×</button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -1023,7 +1033,7 @@ export default function FinancialRoadmap() {
             const category = prompt("Category (Vehicle / Watch / Tech / Other):", "Watch");
             const priceStr = prompt("Price ($):", "0");
             const price = parseFloat(priceStr) || 0;
-            setEarnedItems(prev => [...prev, { id: `earn-${Date.now()}`, name, category: category || "Other", price, image: null, completed: false, completedAt: null }]);
+            setEarnedItems(prev => [...prev, { id: `earn-${Date.now()}`, name, category: category || "Other", price, image: null, goalType: "none", goalTarget: 0, completed: false, completedAt: null }]);
           }} style={{
             padding: "10px 20px", fontSize: "13px", fontWeight: 600, borderRadius: "8px",
             border: "1px solid #0F6E56", background: "transparent", color: "#4ade80", cursor: "pointer",

@@ -173,6 +173,8 @@ export default function DashboardShell({ onLogout }) {
 const styles = {
   shell: {
     minHeight: '100vh',
+    height: '100vh',
+    overflow: 'hidden',
     background: 'var(--color-background-primary)',
     color: 'var(--color-text-primary)',
     fontFamily: 'var(--font-sans)',
@@ -181,7 +183,7 @@ const styles = {
   },
   contentArea: {
     flex: 1,
-    padding: '1.5rem',
+    overflow: 'hidden',
     width: '100%',
     boxSizing: 'border-box',
   },
