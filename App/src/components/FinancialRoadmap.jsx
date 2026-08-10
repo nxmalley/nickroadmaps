@@ -873,10 +873,10 @@ export default function FinancialRoadmap() {
           {/* Sort + View Toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "12px", color: "#94a3b8" }}>Sort by:</span>
+              <span style={{ fontSize: "13px", color: "#94a3b8" }}>Sort by:</span>
               <select value={earnedSort} onChange={e => setEarnedSort(e.target.value)} style={{
                 background: "#1e293b", border: "1px solid #334155", borderRadius: "6px",
-                padding: "6px 10px", fontSize: "12px", color: "#e2e8f0", cursor: "pointer",
+                padding: "6px 10px", fontSize: "13px", color: "#e2e8f0", cursor: "pointer",
               }}>
                 <option value="custom">Custom</option>
                 <option value="price-desc">Price (High → Low)</option>
@@ -900,7 +900,7 @@ export default function FinancialRoadmap() {
 
         {/* ═══ Rewards Grid / List ═══ */}
         {earnedViewMode === "grid" ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
             {sortedList.length === 0 && (
               <p style={{ fontSize: "13px", color: "#64748b", gridColumn: "1 / -1" }}>
                 {earnedTab === "pending" ? "No pending rewards. Add something you're working toward." : "Nothing completed yet. Keep grinding."}
@@ -910,7 +910,7 @@ export default function FinancialRoadmap() {
               const itemProg = getItemProgress(item);
               return (
               <div key={item.id} style={{
-                background: "#1e293b", borderRadius: "12px", border: "1px solid #334155",
+                background: "#1e293b", borderRadius: "10px", border: "1px solid #334155",
                 overflow: "hidden", display: "flex", flexDirection: "column", position: "relative",
                 opacity: item.completed ? 0.7 : 1,
               }}>
@@ -929,7 +929,7 @@ export default function FinancialRoadmap() {
                     onClick={() => completeEarnedItem(item.id)}
                     style={{
                       position: "absolute", top: "8px", left: "8px",
-                      width: "18px", height: "18px", borderRadius: "4px",
+                      width: "16px", height: "16px", borderRadius: "3px",
                       border: "1.5px solid #475569", background: "rgba(15,23,42,0.6)",
                       cursor: "pointer", zIndex: 2,
                     }}
@@ -939,43 +939,43 @@ export default function FinancialRoadmap() {
                 {item.completed && (
                   <div style={{
                     position: "absolute", top: "8px", left: "8px",
-                    width: "18px", height: "18px", borderRadius: "4px",
+                    width: "16px", height: "16px", borderRadius: "3px",
                     border: "1.5px solid #0F6E56", background: "#0F6E56",
                     display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2,
                   }}>
-                    <span style={{ fontSize: "11px", color: "#fff", fontWeight: 700 }}>✓</span>
+                    <span style={{ fontSize: "10px", color: "#fff", fontWeight: 700 }}>✓</span>
                   </div>
                 )}
-                {/* Image — dominant area */}
+                {/* Image area — large, dark background */}
                 <div style={{
-                  height: "180px", background: "#0f172a",
-                  display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
-                  overflow: "hidden",
+                  height: "140px", background: "#0b1120",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "12px",
                 }}>
                   {item.image ? (
-                    <img src={item.image} alt={item.name || item.text} style={{ width: "80%", height: "80%", objectFit: "contain" }} />
+                    <img src={item.image} alt={item.name || item.text} style={{ maxWidth: "90%", maxHeight: "110px", objectFit: "contain" }} />
                   ) : (
-                    <span style={{ fontSize: "48px", opacity: 0.3 }}>🎁</span>
+                    <span style={{ fontSize: "40px", opacity: 0.3 }}>🎁</span>
                   )}
                 </div>
-                {/* Info — compact */}
-                <div style={{ padding: "10px 12px 8px", background: "#1e293b", borderTop: "1px solid #334155" }}>
-                  <p style={{ fontSize: "12px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {/* Info section — lighter background, compact */}
+                <div style={{ padding: "8px 10px 6px", background: "#1e293b", flex: 1, display: "flex", flexDirection: "column", minHeight: "70px" }}>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3 }}>
                     {item.name || item.text}
                   </p>
-                  {item.subtitle && <p style={{ fontSize: "10px", color: "#94a3b8", margin: "0 0 1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.subtitle}</p>}
-                  {item.description && <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.description}</p>}
-                  <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0", fontStyle: "italic" }}>{item.category}</p>
+                  {item.subtitle && <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 1px" }}>{item.subtitle}</p>}
+                  {item.description && <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 1px" }}>{item.description}</p>}
+                  <p style={{ fontSize: "11px", color: "#64748b", margin: "1px 0 0", fontStyle: "italic" }}>{item.category}</p>
+                  {/* Price + Progress % */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", paddingTop: "6px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
+                    {itemProg !== null && <span style={{ fontSize: "12px", color: "#94a3b8" }}>{itemProg}%</span>}
+                  </div>
                 </div>
-                {/* Price + Progress % */}
-                <div style={{ padding: "0 12px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
-                  {itemProg !== null && <span style={{ fontSize: "11px", color: "#94a3b8" }}>{itemProg}%</span>}
-                </div>
-                {/* Progress bar — only if item has a goal */}
+                {/* Progress bar */}
                 {itemProg !== null && (
-                  <div style={{ height: "3px", background: "#334155" }}>
-                    <div style={{ height: "100%", width: `${parseFloat(itemProg)}%`, background: "#0F6E56", transition: "width 0.3s ease" }} />
+                  <div style={{ height: "3px", background: "#334155", flexShrink: 0 }}>
+                    <div style={{ height: "100%", width: `${parseFloat(itemProg)}%`, background: "#4ade80", borderRadius: "0 2px 2px 0", transition: "width 0.3s ease" }} />
                   </div>
                 )}
               </div>
