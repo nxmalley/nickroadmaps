@@ -918,8 +918,9 @@ export default function FinancialRoadmap() {
                 <span style={{
                   position: "absolute", top: "8px", right: "8px",
                   background: item.completed ? "#0F6E56" : "#1e40af",
-                  color: "#fff", fontSize: "10px", fontWeight: 600,
-                  padding: "3px 8px", borderRadius: "4px", letterSpacing: "0.3px", zIndex: 2,
+                  color: "#fff", fontSize: "clamp(8px, 1.2vw, 11px)", fontWeight: 600,
+                  padding: "clamp(2px, 0.4vw, 4px) clamp(4px, 0.8vw, 8px)", borderRadius: "4px", letterSpacing: "0.3px", zIndex: 2,
+                  whiteSpace: "nowrap",
                 }}>
                   {item.completed ? "Earned" : "Pending"}
                 </span>
@@ -948,12 +949,12 @@ export default function FinancialRoadmap() {
                 )}
                 {/* Item name/description — top left, below checkbox */}
                 <div style={{ padding: "28px 10px 4px", zIndex: 1 }}>
-                  <p style={{ fontSize: "12px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 1px", lineHeight: 1.3 }}>
+                  <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3 }}>
                     {item.name || item.text}
                   </p>
-                  {item.subtitle && <p style={{ fontSize: "10px", color: "#94a3b8", margin: 0 }}>{item.subtitle}</p>}
-                  {item.description && <p style={{ fontSize: "10px", color: "#64748b", margin: 0 }}>{item.description}</p>}
-                  <p style={{ fontSize: "10px", color: "#64748b", margin: "1px 0 0", fontStyle: "italic" }}>{item.category}</p>
+                  {item.subtitle && <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0 }}>{item.subtitle}</p>}
+                  {item.description && <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>{item.description}</p>}
+                  <p style={{ fontSize: "12px", color: "#64748b", margin: "2px 0 0", fontStyle: "italic" }}>{item.category}</p>
                 </div>
                 {/* Image — fills remaining space */}
                 <div style={{
@@ -967,14 +968,14 @@ export default function FinancialRoadmap() {
                   )}
                 </div>
                 {/* Price + Progress % at bottom */}
-                <div style={{ padding: "4px 10px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
-                  {itemProg !== null && <span style={{ fontSize: "11px", color: "#94a3b8" }}>{itemProg}%</span>}
+                <div style={{ padding: "6px 10px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
+                  {itemProg !== null && <span style={{ fontSize: "14px", color: "#94a3b8" }}>{itemProg}%</span>}
                 </div>
                 {/* Progress bar */}
                 {itemProg !== null && (
-                  <div style={{ height: "3px", background: "#334155", flexShrink: 0 }}>
-                    <div style={{ height: "100%", width: `${parseFloat(itemProg)}%`, background: "#4ade80", borderRadius: "0 2px 2px 0", transition: "width 0.3s ease" }} />
+                  <div style={{ height: "5px", background: "#334155", flexShrink: 0 }}>
+                    <div style={{ height: "100%", width: `${parseFloat(itemProg)}%`, background: "#4ade80", borderRadius: "0 3px 3px 0", transition: "width 0.3s ease" }} />
                   </div>
                 )}
               </div>
