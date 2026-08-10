@@ -456,7 +456,7 @@ export default function FinancialRoadmap() {
       </aside>
 
       {/* ═══ Main Content Area ═══ */}
-      <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", height: "100%" }}>
+      <main style={{ flex: 1, padding: "28px 32px 60px", overflowY: "auto", height: "100%" }}>
         {/* Header */}
         <p style={{ fontSize: "15px", color: "#94a3b8", margin: "0 0 4px" }}>Welcome back, Nick 👋</p>
         <h2 style={{ fontSize: "24px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>
@@ -949,7 +949,7 @@ export default function FinancialRoadmap() {
                 )}
                 {/* Item name/description — top left, below checkbox */}
                 <div style={{ padding: "28px 10px 4px", zIndex: 1 }}>
-                  <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3 }}>
+                  <p style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3 }}>
                     {item.name || item.text}
                   </p>
                   {item.subtitle && <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0 }}>{item.subtitle}</p>}
@@ -969,8 +969,8 @@ export default function FinancialRoadmap() {
                 </div>
                 {/* Price + Progress % at bottom */}
                 <div style={{ padding: "6px 10px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
-                  {itemProg !== null && <span style={{ fontSize: "14px", color: "#94a3b8" }}>{itemProg}%</span>}
+                  <span style={{ fontSize: "17px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
+                  {itemProg !== null && <span style={{ fontSize: "15px", color: "#94a3b8" }}>{itemProg}%</span>}
                 </div>
                 {/* Progress bar */}
                 {itemProg !== null && (
