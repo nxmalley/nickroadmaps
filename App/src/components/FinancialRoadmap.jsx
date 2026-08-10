@@ -958,10 +958,10 @@ export default function FinancialRoadmap() {
                 {/* Image — fills remaining space */}
                 <div style={{
                   flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                  padding: "8px 12px",
+                  padding: "4px 8px",
                 }}>
                   {item.image ? (
-                    <img src={item.image} alt={item.name || item.text} style={{ maxWidth: "90%", maxHeight: "100px", objectFit: "contain" }} />
+                    <img src={item.image} alt={item.name || item.text} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   ) : (
                     <span style={{ fontSize: "40px", opacity: 0.3 }}>🎁</span>
                   )}
