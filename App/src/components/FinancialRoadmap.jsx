@@ -932,17 +932,18 @@ export default function FinancialRoadmap() {
                 )}
                 {/* Image — dominant area */}
                 <div style={{
-                  flex: 1, minHeight: "180px", background: "linear-gradient(180deg, #1a2332 0%, #0f172a 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
+                  height: "180px", background: "#0f172a",
+                  display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+                  overflow: "hidden",
                 }}>
                   {item.image ? (
-                    <img src={item.image} alt={item.name || item.text} style={{ maxHeight: "150px", maxWidth: "100%", objectFit: "contain" }} />
+                    <img src={item.image} alt={item.name || item.text} style={{ width: "80%", height: "80%", objectFit: "contain" }} />
                   ) : (
                     <span style={{ fontSize: "48px", opacity: 0.3 }}>🎁</span>
                   )}
                 </div>
                 {/* Info — compact */}
-                <div style={{ padding: "10px 12px 8px", background: "#1e293b" }}>
+                <div style={{ padding: "10px 12px 8px", background: "#1e293b", borderTop: "1px solid #334155" }}>
                   <p style={{ fontSize: "12px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {item.name || item.text}
                   </p>
@@ -951,7 +952,7 @@ export default function FinancialRoadmap() {
                   <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0", fontStyle: "italic" }}>{item.category}</p>
                 </div>
                 {/* Price + Progress % */}
-                <div style={{ padding: "0 12px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#1e293b" }}>
+                <div style={{ padding: "0 12px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: "13px", fontWeight: 700, color: "#4ade80" }}>${(item.price || 0).toLocaleString()}</span>
                   {itemProg !== null && <span style={{ fontSize: "11px", color: "#94a3b8" }}>{itemProg}%</span>}
                 </div>
