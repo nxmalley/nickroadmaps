@@ -195,30 +195,34 @@ export default function FinancialRoadmap() {
   const [earnedViewMode, setEarnedViewMode] = useState("grid"); // "grid" | "list"
   const [earnedSort, setEarnedSort] = useState("custom"); // "custom" | "price-asc" | "price-desc" | "name"
 
-  // Migration map for old flat-text earned items → new rich format
-  const EARNED_MIGRATION_MAP = {
-    "earn-suv": { name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0 },
-    "earn-porsche": { name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3000000 },
-    "earn-gshock": { name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
-    "earn-tissot": { name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
-    "earn-seiko": { name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000 },
-    "earn-longines": { name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000 },
-    "earn-tag": { name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000 },
-    "earn-rolex": { name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000 },
-  };
+  // Migration applied on data load from Upstash
 
   function migrateEarnedItems(items) {
     if (!Array.isArray(items)) return items;
-    // If items already have 'name' field, no migration needed
-    if (items.length > 0 && items[0].name) return items;
-    // Migrate old format
+    // Price correction map — always applied regardless of format
+    const PRICE_FIX = {
+      "earn-yukon": { price: 70000, goalType: "none", goalTarget: 0 },
+      "earn-suv": { price: 70000, goalType: "none", goalTarget: 0, name: "GMC Yukon Denali", category: "Vehicle", image: "/GMC_Yukon.png" },
+      "earn-maserati": { price: 225000, goalType: "networth", goalTarget: 2000000 },
+      "earn-amg": { price: 175000, goalType: "networth", goalTarget: 3000000 },
+      "earn-gshock": { price: 250, goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+      "earn-tissot": { price: 450, goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+      "earn-seiko": { price: 750, goalType: "networth", goalTarget: 200000 },
+      "earn-longines": { price: 3100, goalType: "networth", goalTarget: 350000 },
+      "earn-tag": { price: 3700, goalType: "networth", goalTarget: 500000 },
+      "earn-rolex": { price: 65000, goalType: "networth", goalTarget: 2500000 },
+      "earn-porsche": { price: 175000, goalType: "networth", goalTarget: 3000000, name: "Mercedes-AMG GT R", category: "Vehicle", image: "/AMG_GTR.png" },
+    };
     return items.map(item => {
-      const mapped = EARNED_MIGRATION_MAP[item.id];
-      if (mapped) {
-        return { ...item, ...mapped };
+      const fix = PRICE_FIX[item.id];
+      if (fix) {
+        return { ...item, ...fix, name: fix.name || item.name || item.text };
       }
-      // Unknown item — convert text to name
-      return { ...item, name: item.text || "Unknown Reward", category: "Other", price: 0, image: null };
+      // Unknown item — ensure it has a name field
+      if (!item.name && item.text) {
+        return { ...item, name: item.text, category: item.category || "Other", price: item.price || 0, image: item.image || null };
+      }
+      return item;
     });
   }
 
@@ -418,7 +422,7 @@ export default function FinancialRoadmap() {
         </nav>
 
         {/* Bottom section */}
-        <div style={{ padding: "0 8px", marginTop: "auto" }}>
+        <div style={{ padding: "0 8px", marginTop: "auto", paddingBottom: "16px" }}>
           <button onClick={() => setActiveView("earned")} style={{
             display: "flex", alignItems: "center",
             padding: "10px 12px", borderRadius: "6px", border: "none",
@@ -431,8 +435,8 @@ export default function FinancialRoadmap() {
           }}>
             <span>Earned not Given 🎁</span>
           </button>
-          <p style={{ fontSize: "14px", fontStyle: "italic", color: "#64748b", margin: 0, lineHeight: 1.5, padding: "0 8px" }}>
-            &ldquo;Discipline today, freedom tomorrow.&rdquo;
+          <p style={{ fontSize: "12px", fontStyle: "italic", color: "#64748b", margin: 0, lineHeight: 1.4, padding: "0 8px" }}>
+            &ldquo;Discipline today,<br />freedom tomorrow.&rdquo;
           </p>
         </div>
       </aside>
@@ -928,11 +932,11 @@ export default function FinancialRoadmap() {
                 )}
                 {/* Image — dominant area */}
                 <div style={{
-                  flex: 1, minHeight: "160px", background: "linear-gradient(180deg, #1a2332 0%, #0f172a 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+                  flex: 1, minHeight: "180px", background: "linear-gradient(180deg, #1a2332 0%, #0f172a 100%)",
+                  display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
                 }}>
                   {item.image ? (
-                    <img src={item.image} alt={item.name || item.text} style={{ maxHeight: "130px", maxWidth: "100%", objectFit: "contain" }} />
+                    <img src={item.image} alt={item.name || item.text} style={{ maxHeight: "150px", maxWidth: "100%", objectFit: "contain" }} />
                   ) : (
                     <span style={{ fontSize: "48px", opacity: 0.3 }}>🎁</span>
                   )}
