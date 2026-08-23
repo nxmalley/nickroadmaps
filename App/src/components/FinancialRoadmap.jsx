@@ -183,17 +183,18 @@ export default function FinancialRoadmap() {
   const [earnedItems, setEarnedItems] = useState([
     { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0, completed: false, completedAt: null },
     { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 225000, image: "/Maserati_McPura.png", goalType: "networth", goalTarget: 2000000, completed: false, completedAt: null },
-    { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3000000, completed: false, completedAt: null },
+    { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3500000, completed: false, completedAt: null },
     { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000, completed: false, completedAt: null },
     { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000, completed: false, completedAt: null },
     { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000, completed: false, completedAt: null },
     { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000, completed: false, completedAt: null },
     { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000, completed: false, completedAt: null },
     { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000, completed: false, completedAt: null },
+    { id: "earn-rolex-yg", name: "Rolex Day-Date 40MM", subtitle: "Yellow Gold", description: "White Dial 228238", category: "Watch", price: 50000, image: "/Rolex_YellowGold.png", goalType: "networth", goalTarget: 3000000, completed: false, completedAt: null },
   ]);
   const [earnedDraft, setEarnedDraft] = useState("");
   const [earnedViewMode, setEarnedViewMode] = useState("grid"); // "grid" | "list"
-  const [earnedSort, setEarnedSort] = useState("custom"); // "custom" | "price-asc" | "price-desc" | "name"
+  const [earnedSort, setEarnedSort] = useState("custom"); // "custom" | "progress" | "price-asc" | "price-desc" | "name"
 
   // Migration applied on data load from Upstash
 
@@ -203,13 +204,14 @@ export default function FinancialRoadmap() {
     const CANONICAL = [
       { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0 },
       { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 225000, image: "/Maserati_McPura.png", goalType: "networth", goalTarget: 2000000 },
-      { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3000000 },
+      { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3500000 },
       { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
       { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
       { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000 },
       { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000 },
       { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000 },
       { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000 },
+      { id: "earn-rolex-yg", name: "Rolex Day-Date 40MM", subtitle: "Yellow Gold", description: "White Dial 228238", category: "Watch", price: 50000, image: "/Rolex_YellowGold.png", goalType: "networth", goalTarget: 3000000 },
     ];
     // Build a map for quick lookup
     const canonMap = {};
@@ -755,6 +757,7 @@ export default function FinancialRoadmap() {
       if (earnedSort === "price-asc") return (a.price || 0) - (b.price || 0);
       if (earnedSort === "price-desc") return (b.price || 0) - (a.price || 0);
       if (earnedSort === "name") return (a.name || a.text || "").localeCompare(b.name || b.text || "");
+      if (earnedSort === "progress") return parseFloat(getItemProgress(b) || "0") - parseFloat(getItemProgress(a) || "0");
       return 0;
     });
 
@@ -879,6 +882,7 @@ export default function FinancialRoadmap() {
                 padding: "6px 10px", fontSize: "13px", color: "#e2e8f0", cursor: "pointer",
               }}>
                 <option value="custom">Custom</option>
+                <option value="progress">Closest to Completion</option>
                 <option value="price-desc">Price (High → Low)</option>
                 <option value="price-asc">Price (Low → High)</option>
                 <option value="name">Name</option>
