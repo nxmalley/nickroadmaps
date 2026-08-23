@@ -128,6 +128,7 @@ export default function FinancialRoadmap() {
   const [updateModal, setUpdateModal] = useState(null); // { accId, accName, accType, currentBalance, newBalance, note }
   const [updateDraft, setUpdateDraft] = useState({ value: "", note: "" });
   const [showSalaryForm, setShowSalaryForm] = useState(false);
+  const [showAddLogEntry, setShowAddLogEntry] = useState(false);
   const [showSalaryPanel, setShowSalaryPanel] = useState(false);
   const [salaryDraft, setSalaryDraft] = useState({ year: "", title: "", employer: "", salary: "" });
   const [expandedYear, setExpandedYear] = useState(null);
@@ -1462,12 +1463,33 @@ export default function FinancialRoadmap() {
     const years = Object.keys(earningsData).sort();
     const lifetimeTotal = years.reduce((sum, y) => sum + Object.values(earningsData[y]).reduce((s, v) => s + (v || 0), 0), 0);
 
-    function isYearLocked(year) {
-      const data = earningsData[year];
-      if (!data) return false;
-      if (year === "2021") return true;
-      return data.Dec > 0 && year !== String(new Date().getFullYear());
-    }
+    // Debt total from all log entries
+    const totalDebt = log.reduce((sum, entry) => {
+      const d = parseFloat(String(entry.debt).replace(/[^0-9.]/g, "")) || 0;
+      return sum + d;
+    }, 0);
+
+    // Net worth chart data
+    const chartW = 520, chartH = 200;
+    const chartPadLeft = 50, chartPadRight = 20, chartPadTop = 10, chartPadBot = 30;
+    const plotW = chartW - chartPadLeft - chartPadRight;
+    const plotH = chartH - chartPadTop - chartPadBot;
+    const nwChartValues = log.map(e => parseNw(e.netWorth));
+    const nwChartMin = Math.min(...nwChartValues, 0);
+    const nwChartMax = Math.max(...nwChartValues, 1);
+    const nwChartRange = nwChartMax - nwChartMin || 1;
+
+    const chartPoints = nwChartValues.map((v, i) => {
+      const x = chartPadLeft + (nwChartValues.length > 1 ? (i / (nwChartValues.length - 1)) * plotW : plotW / 2);
+      const y = chartPadTop + plotH - ((v - nwChartMin) / nwChartRange) * plotH;
+      return { x, y, value: v, label: log[i].date };
+    });
+    const polyline = chartPoints.map(p => `${p.x},${p.y}`).join(" ");
+    const areaPolygon = `${chartPadLeft},${chartPadTop + plotH} ${polyline} ${chartPoints[chartPoints.length - 1]?.x || chartPadLeft},${chartPadTop + plotH}`;
+
+    // Y-axis ticks
+    const yTicks = 5;
+    const yTickValues = Array.from({ length: yTicks + 1 }, (_, i) => nwChartMin + (nwChartRange / yTicks) * i);
 
     function updateMonth(year, month, value) {
       const num = parseFloat(value) || 0;
@@ -1477,125 +1499,274 @@ export default function FinancialRoadmap() {
       }));
     }
 
-    return (
-      <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 16px" }}>Financial Breakdown History</h3>
+    function formatCompact(val) {
+      if (Math.abs(val) >= 1000) return `$${(val / 1000).toFixed(0)}K`;
+      return `$${val.toFixed(0)}`;
+    }
 
-        {/* Lifetime Earnings */}
-        <div style={{ background: "#1e293b", borderRadius: "10px", border: "1px solid #334155", padding: "16px 18px", marginBottom: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "12px" }}>
-            <span style={{ fontSize: "13px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Lifetime Earnings</span>
-            <span style={{ fontSize: "20px", fontWeight: 700, color: "#4ade80" }}>${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* ═══ Page Header ═══ */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px", display: "flex", alignItems: "center", gap: "10px" }}>
+              Financial Breakdown <span style={{ fontSize: "18px" }}>📈</span>
+            </h2>
+            <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Track your income, expenses, debt, and net worth over time.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
+        </div>
+
+        {/* ═══ Top Row: Total Earnings + Net Worth Chart ═══ */}
+        <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: "20px" }}>
+          {/* Left: Total Earnings Summary */}
+          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "24px" }}>
+            <p style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 8px" }}>Total Earnings (All Time)</p>
+            <p style={{ fontSize: "32px", fontWeight: 700, color: "#a78bfa", margin: "0 0 6px" }}>
+              ${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 24px" }}>Money that has touched your accounts</p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ color: "#4ade80", fontSize: "16px" }}>↑</span>
+                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Income</span>
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ color: "#f87171", fontSize: "16px" }}>↓</span>
+                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Expenses</span>
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>$0.00</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ color: "#fbbf24", fontSize: "14px" }}>⊡</span>
+                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Debt</span>
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ color: "#a78bfa", fontSize: "14px" }}>↗</span>
+                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Current Net Worth</span>
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>{formattedNw}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Net Worth Over Time Chart */}
+          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "20px 24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>NET WORTH OVER TIME</p>
+              <span style={{ fontSize: "12px", color: "#94a3b8", background: "#0f172a", padding: "4px 10px", borderRadius: "6px", border: "1px solid #334155" }}>
+                Since {log[0]?.date || "—"}
+              </span>
+            </div>
+            <svg width="100%" height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} preserveAspectRatio="none" style={{ display: "block" }}>
+              <defs>
+                <linearGradient id="nwChartFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* Y-axis grid lines + labels */}
+              {yTickValues.map((val, i) => {
+                const y = chartPadTop + plotH - ((val - nwChartMin) / nwChartRange) * plotH;
+                return (
+                  <g key={i}>
+                    <line x1={chartPadLeft} y1={y} x2={chartW - chartPadRight} y2={y} stroke="#1e293b" strokeWidth="1" />
+                    <text x={chartPadLeft - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#64748b">{formatCompact(val)}</text>
+                  </g>
+                );
+              })}
+              {/* Area fill */}
+              {chartPoints.length > 1 && <polygon points={areaPolygon} fill="url(#nwChartFill)" />}
+              {/* Line */}
+              {chartPoints.length > 1 && <polyline points={polyline} fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+              {/* Data points */}
+              {chartPoints.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r="3" fill="#a78bfa" stroke="#0f172a" strokeWidth="1.5" />
+              ))}
+              {/* Latest value label */}
+              {chartPoints.length > 0 && (() => {
+                const last = chartPoints[chartPoints.length - 1];
+                return (
+                  <g>
+                    <rect x={last.x + 6} y={last.y - 20} width="70" height="32" rx="4" fill="#1e293b" stroke="#334155" />
+                    <text x={last.x + 10} y={last.y - 6} fontSize="9" fill="#94a3b8">{last.label}</text>
+                    <text x={last.x + 10} y={last.y + 6} fontSize="11" fill="#f1f5f9" fontWeight="600">{formattedNw}</text>
+                  </g>
+                );
+              })()}
+              {/* X-axis labels */}
+              {chartPoints.map((p, i) => (
+                <text key={i} x={p.x} y={chartH - 4} textAnchor="middle" fontSize="9" fill="#64748b">{p.label}</text>
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        {/* ═══ Lifetime Earnings By Year Strip ═══ */}
+        <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "16px 24px", display: "flex", alignItems: "center", gap: "24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            <span style={{ fontSize: "16px" }}>📊</span>
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>LIFETIME EARNINGS BY YEAR</p>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>Total income received each year.</p>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "16px", flex: 1, justifyContent: "flex-end", overflowX: "auto" }}>
             {years.map(year => {
               const yearTotal = Object.values(earningsData[year]).reduce((s, v) => s + (v || 0), 0);
-              const isExpanded = expandedYear === year;
-              const locked = isYearLocked(year);
               return (
                 <div key={year}
-                  onClick={() => setExpandedYear(isExpanded ? null : year)}
-                  style={{ padding: "8px 10px", background: isExpanded ? "#334155" : "#0f172a", borderRadius: "6px", textAlign: "center", cursor: "pointer", border: isExpanded ? "1px solid #475569" : "1px solid transparent", transition: "background 0.15s" }}
+                  onClick={() => setExpandedYear(expandedYear === year ? null : year)}
+                  style={{ textAlign: "center", cursor: "pointer", padding: "4px 12px", borderRadius: "6px", background: expandedYear === year ? "#334155" : "transparent", transition: "background 0.15s" }}
                 >
-                  <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>{year}{locked ? " 🔒" : ""}</p>
-                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0", margin: 0 }}>${yearTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 2px" }}>{year}</p>
+                  <p style={{ fontSize: "14px", fontWeight: 600, color: "#e2e8f0", margin: 0 }}>${yearTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                 </div>
               );
             })}
           </div>
+          <button
+            onClick={() => setExpandedYear(expandedYear ? null : years[years.length - 1])}
+            style={{ background: "none", border: "none", color: "#94a3b8", fontSize: "18px", cursor: "pointer", padding: "4px" }}
+            title="Expand monthly breakdown"
+          >⌄</button>
+        </div>
 
-          {/* Expanded year monthly breakdown */}
-          {expandedYear && earningsData[expandedYear] && (
-            <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #334155" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9" }}>{expandedYear} Monthly Breakdown</span>
-                {isYearLocked(expandedYear) && <span style={{ fontSize: "11px", color: "#64748b" }}>Read only</span>}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
-                {MONTHS.map(month => {
-                  const value = earningsData[expandedYear][month] || 0;
-                  const locked = isYearLocked(expandedYear);
+        {/* Expanded year monthly breakdown */}
+        {expandedYear && earningsData[expandedYear] && (
+          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "20px 24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <span style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9" }}>{expandedYear} Monthly Breakdown</span>
+              <button onClick={() => setExpandedYear(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "14px" }}>✕</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "10px" }}>
+              {MONTHS.map(month => {
+                const value = earningsData[expandedYear][month] || 0;
+                const locked = expandedYear === "2021" || (earningsData[expandedYear].Dec > 0 && expandedYear !== String(new Date().getFullYear()));
+                return (
+                  <div key={month} style={{ padding: "10px", background: "#0f172a", borderRadius: "6px" }}>
+                    <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 4px", textTransform: "uppercase" }}>{month}</p>
+                    {locked ? (
+                      <p style={{ fontSize: "12px", fontWeight: 500, color: value > 0 ? "#e2e8f0" : "#475569", margin: 0 }}>
+                        {value > 0 ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
+                      </p>
+                    ) : (
+                      <input
+                        type="number"
+                        value={value || ""}
+                        onChange={e => updateMonth(expandedYear, month, e.target.value)}
+                        placeholder="0.00"
+                        style={{ width: "100%", padding: "4px 6px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#1e293b", color: "#e2e8f0", boxSizing: "border-box" }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ Financial History Section ═══ */}
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "16px" }}>📋</span>
+              <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>FINANCIAL HISTORY</h3>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "12px", color: "#94a3b8", background: "#1e293b", padding: "6px 12px", borderRadius: "6px", border: "1px solid #334155" }}>All Time</span>
+              <button onClick={() => setShowAddLogEntry(true)} style={{
+                padding: "8px 14px", fontSize: "12px", fontWeight: 500,
+                borderRadius: "6px", border: "none",
+                background: "#0F6E56", color: "#fff", cursor: "pointer",
+              }}>+ Add Entry</button>
+            </div>
+          </div>
+
+          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #334155" }}>
+                  {["Date", "Income (Salary)", "Debt", "Credit", "Net Worth", "Notes", "Actions"].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...log].reverse().map((entry, idx) => {
+                  const realIdx = log.length - 1 - idx;
+                  const nwVal = parseNw(entry.netWorth);
+                  const nwColor = nwVal >= 0 ? "#4ade80" : "#f87171";
                   return (
-                    <div key={month} style={{ padding: "8px", background: "#0f172a", borderRadius: "6px" }}>
-                      <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 4px", textTransform: "uppercase" }}>{month}</p>
-                      {locked ? (
-                        <p style={{ fontSize: "12px", fontWeight: 500, color: value > 0 ? "#e2e8f0" : "#475569", margin: 0 }}>
-                          {value > 0 ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
-                        </p>
-                      ) : (
-                        <input
-                          type="number"
-                          value={value || ""}
-                          onChange={e => updateMonth(expandedYear, month, e.target.value)}
-                          placeholder="0.00"
-                          style={{ width: "100%", padding: "4px 6px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#1e293b", color: "#e2e8f0", boxSizing: "border-box" }}
-                        />
-                      )}
-                    </div>
+                    <tr key={realIdx} style={{ borderBottom: "1px solid #1e293b" }}>
+                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.date}</td>
+                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.salary ? `$${Number(entry.salary).toLocaleString()}` : "—"}</td>
+                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.debt ? `$${Number(String(entry.debt).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
+                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.credit || "—"}</td>
+                      <td style={{ padding: "12px 16px", color: nwColor, fontWeight: 500 }}>
+                        {nwVal >= 0 ? `$${nwVal.toLocaleString()}` : `-$${Math.abs(nwVal).toLocaleString()}`}
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "#94a3b8", fontSize: "12px" }}>{entry.note || ""}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <button onClick={() => removeLogEntry(realIdx)} style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          fontSize: "14px", color: "#f87171", padding: "2px 6px",
+                        }} title="Delete entry">🗑</button>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Add entry inline form */}
+          {showAddLogEntry && (
+            <div style={{ display: "flex", gap: "8px", marginTop: "16px", flexWrap: "wrap", alignItems: "flex-end", background: "#1e293b", borderRadius: "10px", padding: "16px", border: "1px solid #334155" }}>
+              {[
+                { key: "date", placeholder: "Date (e.g. Oct 2026)", width: "150px" },
+                { key: "netWorth", placeholder: "Net Worth", width: "110px" },
+                { key: "salary", placeholder: "Salary", width: "100px" },
+                { key: "debt", placeholder: "Debt", width: "100px" },
+                { key: "credit", placeholder: "Credit", width: "80px" },
+              ].map(field => (
+                <input
+                  key={field.key}
+                  value={logDraft[field.key]}
+                  onChange={e => setLogDraft(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  placeholder={field.placeholder}
+                  style={{
+                    width: field.width, padding: "8px 12px", fontSize: "12px",
+                    border: "1px solid #334155", borderRadius: "6px",
+                    background: "#0f172a", color: "#e2e8f0",
+                  }}
+                />
+              ))}
+              <button onClick={() => { addLogEntry(); setShowAddLogEntry(false); }} style={{
+                padding: "8px 16px", fontSize: "12px", fontWeight: 500,
+                borderRadius: "6px", border: "none",
+                background: "#0F6E56", color: "#fff", cursor: "pointer",
+              }}>Save</button>
+              <button onClick={() => setShowAddLogEntry(false)} style={{
+                padding: "8px 16px", fontSize: "12px", fontWeight: 500,
+                borderRadius: "6px", border: "1px solid #334155",
+                background: "transparent", color: "#94a3b8", cursor: "pointer",
+              }}>Cancel</button>
             </div>
           )}
-        </div>
 
-        {/* Net Worth History Table */}
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #334155" }}>
-                {["Date", "Net Worth", "Salary", "Debt", "Credit"].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "10px 12px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
-                ))}
-                <th style={{ width: "36px" }} />
-              </tr>
-            </thead>
-            <tbody>
-              {log.map((entry, idx) => (
-                <tr key={idx} style={{ borderBottom: "1px solid #1e293b" }}>
-                  <td style={{ padding: "10px 12px", color: "#e2e8f0" }}>{entry.date}</td>
-                  <td style={{ padding: "10px 12px", color: "#f1f5f9", fontWeight: 500 }}>{entry.netWorth}</td>
-                  <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{entry.salary}</td>
-                  <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{entry.debt}</td>
-                  <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{entry.credit}</td>
-                  <td style={{ padding: "10px 12px" }}>
-                    <button onClick={() => removeLogEntry(idx)} style={{
-                      background: "none", border: "none", cursor: "pointer",
-                      fontSize: "14px", color: "#64748b", padding: "2px 6px",
-                    }} title="Remove entry">×</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Add entry form */}
-        <div style={{ display: "flex", gap: "8px", marginTop: "16px", flexWrap: "wrap", alignItems: "flex-end" }}>
-          {[
-            { key: "date", placeholder: "Date (e.g. Oct 10 2026)", width: "170px" },
-            { key: "netWorth", placeholder: "Net Worth", width: "110px" },
-            { key: "salary", placeholder: "Salary", width: "100px" },
-            { key: "debt", placeholder: "Debt", width: "100px" },
-            { key: "credit", placeholder: "Credit", width: "80px" },
-          ].map(field => (
-            <input
-              key={field.key}
-              value={logDraft[field.key]}
-              onChange={e => setLogDraft(prev => ({ ...prev, [field.key]: e.target.value }))}
-              placeholder={field.placeholder}
-              style={{
-                width: field.width, padding: "8px 12px", fontSize: "12px",
-                border: "1px solid #334155", borderRadius: "6px",
-                background: "#0f172a", color: "#e2e8f0",
-              }}
-            />
-          ))}
-          <button onClick={addLogEntry} style={{
-            padding: "8px 16px", fontSize: "12px", fontWeight: 500,
-            borderRadius: "6px", border: "1px solid #0F6E56",
-            background: "transparent", color: "#4ade80", cursor: "pointer",
-          }}>Add</button>
+          {/* Footer note */}
+          <p style={{ fontSize: "11px", color: "#64748b", margin: "12px 0 0", fontStyle: "italic" }}>
+            ⓘ Net Worth = Assets − Liabilities. All values are recorded manually.
+          </p>
         </div>
       </div>
     );
