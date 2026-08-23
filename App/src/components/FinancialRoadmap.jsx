@@ -115,6 +115,44 @@ const INITIAL_LOG = [
   { date: "Jul 2026", netWorth: "27,129", salary: "100,000", debt: "15,206", credit: "770" },
 ];
 
+/* ─── Migration helper (pure — no component deps) ─── */
+function migrateEarnedItems(items) {
+  if (!Array.isArray(items)) return items;
+  const CANONICAL = [
+    { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0 },
+    { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 225000, image: "/Maserati_McPura.png", goalType: "networth", goalTarget: 2000000 },
+    { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3500000 },
+    { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+    { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
+    { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000 },
+    { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000 },
+    { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000 },
+    { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000 },
+    { id: "earn-rolex-yg", name: "Rolex Day-Date 40MM", subtitle: "Yellow Gold", description: "White Dial 228238", category: "Watch", price: 50000, image: "/Rolex_YellowGold.png", goalType: "networth", goalTarget: 3000000 },
+  ];
+  const canonMap = {};
+  for (const c of CANONICAL) canonMap[c.id] = c;
+  const OLD_ID_MAP = { "earn-suv": "earn-yukon", "earn-porsche": "earn-amg" };
+
+  const result = items.map(item => {
+    const remappedId = OLD_ID_MAP[item.id] || item.id;
+    const canon = canonMap[remappedId];
+    if (canon) {
+      return { ...item, ...canon, id: remappedId, completed: item.completed, completedAt: item.completedAt };
+    }
+    if (!item.name && item.text) return { ...item, name: item.text };
+    return item;
+  });
+
+  const existingIds = new Set(result.map(r => r.id));
+  for (const canon of CANONICAL) {
+    if (!existingIds.has(canon.id)) {
+      result.push({ ...canon, completed: false, completedAt: null });
+    }
+  }
+  return result;
+}
+
 /* ─── Component ─── */
 export default function FinancialRoadmap() {
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -193,55 +231,8 @@ export default function FinancialRoadmap() {
     { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000, completed: false, completedAt: null },
     { id: "earn-rolex-yg", name: "Rolex Day-Date 40MM", subtitle: "Yellow Gold", description: "White Dial 228238", category: "Watch", price: 50000, image: "/Rolex_YellowGold.png", goalType: "networth", goalTarget: 3000000, completed: false, completedAt: null },
   ]);
-  const [earnedDraft, setEarnedDraft] = useState("");
   const [earnedViewMode, setEarnedViewMode] = useState("grid"); // "grid" | "list"
   const [earnedSort, setEarnedSort] = useState("custom"); // "custom" | "progress" | "price-asc" | "price-desc" | "name"
-
-  // Migration applied on data load from Upstash
-
-  function migrateEarnedItems(items) {
-    if (!Array.isArray(items)) return items;
-    // Canonical list of items that must exist
-    const CANONICAL = [
-      { id: "earn-yukon", name: "GMC Yukon Denali", category: "Vehicle", price: 70000, image: "/GMC_Yukon.png", goalType: "none", goalTarget: 0 },
-      { id: "earn-maserati", name: "Maserati MC20 Cielo", category: "Vehicle", price: 225000, image: "/Maserati_McPura.png", goalType: "networth", goalTarget: 2000000 },
-      { id: "earn-amg", name: "Mercedes-AMG GT R", category: "Vehicle", price: 175000, image: "/AMG_GTR.png", goalType: "networth", goalTarget: 3500000 },
-      { id: "earn-gshock", name: "G-Shock GM-2100BB-1A", category: "Watch", price: 250, image: "/GShock.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
-      { id: "earn-tissot", name: "Tissot PRX Quartz", subtitle: "(Steel and Black Dial)", category: "Watch", price: 450, image: "/Tissot_PRX.png", goalType: "debtfree", goalTarget: 0, debtStart: 45000 },
-      { id: "earn-seiko", name: "Seiko Alpinist SPB121", category: "Watch", price: 750, image: "/Seiko_Alpinist.png", goalType: "networth", goalTarget: 200000 },
-      { id: "earn-longines", name: "Longines Master Collection", subtitle: "(L2.919.4.78.3)", description: "Brown Leather and White Dial + Black Leather Strap", category: "Watch", price: 3100, image: "/Longines_MoonPhase.png", goalType: "networth", goalTarget: 350000 },
-      { id: "earn-tag", name: "Tag Heuer Carrera Date", subtitle: "WBN2111.BA0639", description: "(Steel and Silver Dial)", category: "Watch", price: 3700, image: "/Tag_CarreraDate.png", goalType: "networth", goalTarget: 500000 },
-      { id: "earn-rolex", name: "Rolex Day-Date 40MM", subtitle: "Everose Gold Slate Roman", description: "Ombre Dial 228235", category: "Watch", price: 65000, image: "/Rolex_Everose.png", goalType: "networth", goalTarget: 2500000 },
-      { id: "earn-rolex-yg", name: "Rolex Day-Date 40MM", subtitle: "Yellow Gold", description: "White Dial 228238", category: "Watch", price: 50000, image: "/Rolex_YellowGold.png", goalType: "networth", goalTarget: 3000000 },
-    ];
-    // Build a map for quick lookup
-    const canonMap = {};
-    for (const c of CANONICAL) canonMap[c.id] = c;
-    // Also handle old IDs that should map to new items
-    const OLD_ID_MAP = { "earn-suv": "earn-yukon", "earn-porsche": "earn-amg" };
-
-    // Fix existing items and remap old IDs
-    const result = items.map(item => {
-      const remappedId = OLD_ID_MAP[item.id] || item.id;
-      const canon = canonMap[remappedId];
-      if (canon) {
-        return { ...item, ...canon, id: remappedId, completed: item.completed, completedAt: item.completedAt };
-      }
-      // Unknown user-added item — keep as is but ensure name field
-      if (!item.name && item.text) return { ...item, name: item.text };
-      return item;
-    });
-
-    // Inject any missing canonical items
-    const existingIds = new Set(result.map(r => r.id));
-    for (const canon of CANONICAL) {
-      if (!existingIds.has(canon.id)) {
-        result.push({ ...canon, completed: false, completedAt: null });
-      }
-    }
-
-    return result;
-  }
 
   // Load persisted data from server on mount
   useEffect(() => {
@@ -377,11 +368,7 @@ export default function FinancialRoadmap() {
     setFutureNotes(prev => prev.filter(n => n.id !== id));
   }
 
-  function addEarnedItem() {
-    if (!earnedDraft.trim()) return;
-    setEarnedItems(prev => [...prev, { id: `earn-${Date.now()}`, name: earnedDraft.trim(), category: "Other", price: 0, image: null, completed: false, completedAt: null }]);
-    setEarnedDraft("");
-  }
+
 
   function completeEarnedItem(id) {
     setEarnedItems(prev => prev.map(item =>
