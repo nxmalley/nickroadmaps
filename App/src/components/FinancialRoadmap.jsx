@@ -162,6 +162,8 @@ export default function FinancialRoadmap() {
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [earnedTab, setEarnedTab] = useState("pending");
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [hoveredChartPoint, setHoveredChartPoint] = useState(null);
+  const [editingLogIdx, setEditingLogIdx] = useState(null);
   const [showChangeLog, setShowChangeLog] = useState(false);
   const [updateModal, setUpdateModal] = useState(null); // { accId, accName, accType, currentBalance, newBalance, note }
   const [updateDraft, setUpdateDraft] = useState({ value: "", note: "" });
@@ -350,9 +352,7 @@ export default function FinancialRoadmap() {
     setLogDraft({ date: "", netWorth: "", salary: "", debt: "", credit: "" });
   }
 
-  function removeLogEntry(idx) {
-    setLog(prev => prev.filter((_, i) => i !== idx));
-  }
+
 
   function toggleGroup(groupId) {
     setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
@@ -1450,17 +1450,14 @@ export default function FinancialRoadmap() {
     const years = Object.keys(earningsData).sort();
     const lifetimeTotal = years.reduce((sum, y) => sum + Object.values(earningsData[y]).reduce((s, v) => s + (v || 0), 0), 0);
 
-    // Debt total from all log entries
-    const totalDebt = log.reduce((sum, entry) => {
-      const d = parseFloat(String(entry.debt).replace(/[^0-9.]/g, "")) || 0;
-      return sum + d;
-    }, 0);
+    // Debt from latest log entry (same as investment accounts page)
+    const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
 
-    // Net worth chart data
-    const chartW = 520, chartH = 200;
-    const chartPadLeft = 50, chartPadRight = 20, chartPadTop = 10, chartPadBot = 30;
-    const plotW = chartW - chartPadLeft - chartPadRight;
-    const plotH = chartH - chartPadTop - chartPadBot;
+    // Net worth chart data — responsive, uses percentage-based layout
+    const chartViewW = 800, chartViewH = 280;
+    const chartPadLeft = 60, chartPadRight = 30, chartPadTop = 20, chartPadBot = 40;
+    const plotW = chartViewW - chartPadLeft - chartPadRight;
+    const plotH = chartViewH - chartPadTop - chartPadBot;
     const nwChartValues = log.map(e => parseNw(e.netWorth));
     const nwChartMin = Math.min(...nwChartValues, 0);
     const nwChartMax = Math.max(...nwChartValues, 1);
@@ -1523,77 +1520,102 @@ export default function FinancialRoadmap() {
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "#f87171", fontSize: "16px" }}>↓</span>
-                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Expenses</span>
-                </div>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>$0.00</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "#fbbf24", fontSize: "14px" }}>⊡</span>
+                  <span style={{ color: "#f87171", fontSize: "14px" }}>⊡</span>
                   <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Debt</span>
                 </div>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "#f87171" }}>${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "#a78bfa", fontSize: "14px" }}>↗</span>
+                  <span style={{ color: parseNw(log[log.length - 1]?.netWorth) >= 0 ? "#4ade80" : "#f87171", fontSize: "14px" }}>↗</span>
                   <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Current Net Worth</span>
                 </div>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>{formattedNw}</span>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: parseNw(log[log.length - 1]?.netWorth) >= 0 ? "#4ade80" : "#f87171" }}>{formattedNw}</span>
               </div>
             </div>
           </div>
 
           {/* Right: Net Worth Over Time Chart */}
-          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "20px 24px" }}>
+          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "20px 24px", position: "relative" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>NET WORTH OVER TIME</p>
               <span style={{ fontSize: "12px", color: "#94a3b8", background: "#0f172a", padding: "4px 10px", borderRadius: "6px", border: "1px solid #334155" }}>
                 Since {log[0]?.date || "—"}
               </span>
             </div>
-            <svg width="100%" height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} preserveAspectRatio="none" style={{ display: "block" }}>
-              <defs>
-                <linearGradient id="nwChartFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Y-axis grid lines + labels */}
-              {yTickValues.map((val, i) => {
-                const y = chartPadTop + plotH - ((val - nwChartMin) / nwChartRange) * plotH;
+            <div style={{ position: "relative" }}>
+              <svg width="100%" viewBox={`0 0 ${chartViewW} ${chartViewH}`} preserveAspectRatio="xMidYMid meet" style={{ display: "block" }}
+                onMouseLeave={() => setHoveredChartPoint(null)}
+              >
+                <defs>
+                  <linearGradient id="nwChartFillLg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0F6E56" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#0F6E56" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {/* Y-axis grid lines + labels */}
+                {yTickValues.map((val, i) => {
+                  const y = chartPadTop + plotH - ((val - nwChartMin) / nwChartRange) * plotH;
+                  return (
+                    <g key={i}>
+                      <line x1={chartPadLeft} y1={y} x2={chartViewW - chartPadRight} y2={y} stroke="#334155" strokeWidth="0.5" strokeDasharray="4 3" />
+                      <text x={chartPadLeft - 8} y={y + 4} textAnchor="end" fontSize="11" fill="#64748b">{formatCompact(val)}</text>
+                    </g>
+                  );
+                })}
+                {/* Area fill */}
+                {chartPoints.length > 1 && <polygon points={areaPolygon} fill="url(#nwChartFillLg)" />}
+                {/* Line */}
+                {chartPoints.length > 1 && <polyline points={polyline} fill="none" stroke="#0F6E56" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+                {/* Data points with hover */}
+                {chartPoints.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={p.x}
+                    cy={p.y}
+                    r={hoveredChartPoint === i ? 6 : 3.5}
+                    fill={hoveredChartPoint === i ? "#4ade80" : "#0F6E56"}
+                    stroke={hoveredChartPoint === i ? "#fff" : "#0f172a"}
+                    strokeWidth={hoveredChartPoint === i ? 2 : 1.5}
+                    style={{ cursor: "pointer", transition: "r 0.15s, fill 0.15s" }}
+                    onMouseEnter={() => setHoveredChartPoint(i)}
+                  />
+                ))}
+                {/* X-axis labels */}
+                {chartPoints.map((p, i) => (
+                  <text key={i} x={p.x} y={chartViewH - 8} textAnchor="middle" fontSize="11" fill="#64748b">{p.label}</text>
+                ))}
+              </svg>
+              {/* Tooltip on hover */}
+              {hoveredChartPoint !== null && chartPoints[hoveredChartPoint] && (() => {
+                const pt = chartPoints[hoveredChartPoint];
+                const pctX = ((pt.x) / chartViewW) * 100;
+                const pctY = ((pt.y) / chartViewH) * 100;
                 return (
-                  <g key={i}>
-                    <line x1={chartPadLeft} y1={y} x2={chartW - chartPadRight} y2={y} stroke="#1e293b" strokeWidth="1" />
-                    <text x={chartPadLeft - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#64748b">{formatCompact(val)}</text>
-                  </g>
-                );
-              })}
-              {/* Area fill */}
-              {chartPoints.length > 1 && <polygon points={areaPolygon} fill="url(#nwChartFill)" />}
-              {/* Line */}
-              {chartPoints.length > 1 && <polyline points={polyline} fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
-              {/* Data points */}
-              {chartPoints.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="3" fill="#a78bfa" stroke="#0f172a" strokeWidth="1.5" />
-              ))}
-              {/* Latest value label */}
-              {chartPoints.length > 0 && (() => {
-                const last = chartPoints[chartPoints.length - 1];
-                return (
-                  <g>
-                    <rect x={last.x + 6} y={last.y - 20} width="70" height="32" rx="4" fill="#1e293b" stroke="#334155" />
-                    <text x={last.x + 10} y={last.y - 6} fontSize="9" fill="#94a3b8">{last.label}</text>
-                    <text x={last.x + 10} y={last.y + 6} fontSize="11" fill="#f1f5f9" fontWeight="600">{formattedNw}</text>
-                  </g>
+                  <div style={{
+                    position: "absolute",
+                    left: `${pctX}%`,
+                    top: `${pctY}%`,
+                    transform: "translate(-50%, -130%)",
+                    background: "#334155",
+                    borderRadius: "8px",
+                    padding: "8px 12px",
+                    fontSize: "12px",
+                    color: "#f1f5f9",
+                    whiteSpace: "nowrap",
+                    pointerEvents: "none",
+                    zIndex: 10,
+                    border: "1px solid #475569",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: "2px" }}>{pt.label}</div>
+                    <div style={{ color: pt.value >= 0 ? "#4ade80" : "#f87171", fontWeight: 500 }}>
+                      {pt.value >= 0 ? "$" : "-$"}{Math.abs(pt.value).toLocaleString()}
+                    </div>
+                  </div>
                 );
               })()}
-              {/* X-axis labels */}
-              {chartPoints.map((p, i) => (
-                <text key={i} x={p.x} y={chartH - 4} textAnchor="middle" fontSize="9" fill="#64748b">{p.label}</text>
-              ))}
-            </svg>
+            </div>
           </div>
         </div>
 
@@ -1620,6 +1642,19 @@ export default function FinancialRoadmap() {
               );
             })}
           </div>
+          <button
+            onClick={() => {
+              const nextYear = String(Math.max(...years.map(Number)) + 1);
+              if (!earningsData[nextYear]) {
+                const emptyMonths = {};
+                ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].forEach(m => { emptyMonths[m] = 0; });
+                setEarningsData(prev => ({ ...prev, [nextYear]: emptyMonths }));
+                setExpandedYear(nextYear);
+              }
+            }}
+            style={{ background: "#0F6E56", border: "none", color: "#fff", fontSize: "11px", fontWeight: 500, cursor: "pointer", padding: "6px 12px", borderRadius: "6px", whiteSpace: "nowrap" }}
+            title="Add next year"
+          >+ Add Year</button>
           <button
             onClick={() => setExpandedYear(expandedYear ? null : years[years.length - 1])}
             style={{ background: "none", border: "none", color: "#94a3b8", fontSize: "18px", cursor: "pointer", padding: "4px" }}
@@ -1682,7 +1717,7 @@ export default function FinancialRoadmap() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #334155" }}>
-                  {["Date", "Income (Salary)", "Debt", "Credit", "Net Worth", "Notes", "Actions"].map(h => (
+                  {["Date", "Income (Salary)", "Debt", "Credit", "Net Worth", "Actions"].map(h => (
                     <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                   ))}
                 </tr>
@@ -1701,12 +1736,14 @@ export default function FinancialRoadmap() {
                       <td style={{ padding: "12px 16px", color: nwColor, fontWeight: 500 }}>
                         {nwVal >= 0 ? `$${nwVal.toLocaleString()}` : `-$${Math.abs(nwVal).toLocaleString()}`}
                       </td>
-                      <td style={{ padding: "12px 16px", color: "#94a3b8", fontSize: "12px" }}>{entry.note || ""}</td>
                       <td style={{ padding: "12px 16px" }}>
-                        <button onClick={() => removeLogEntry(realIdx)} style={{
+                        <button onClick={() => {
+                          setEditingLogIdx(realIdx);
+                          setLogDraft({ date: entry.date, netWorth: entry.netWorth, salary: entry.salary || "", debt: entry.debt || "", credit: entry.credit || "" });
+                        }} style={{
                           background: "none", border: "none", cursor: "pointer",
-                          fontSize: "14px", color: "#f87171", padding: "2px 6px",
-                        }} title="Delete entry">🗑</button>
+                          fontSize: "13px", color: "#94a3b8", padding: "2px 6px",
+                        }} title="Edit entry">✏️</button>
                       </td>
                     </tr>
                   );
@@ -1716,8 +1753,12 @@ export default function FinancialRoadmap() {
           </div>
 
           {/* Add entry inline form */}
-          {showAddLogEntry && (
+          {/* Add/Edit entry inline form */}
+          {(showAddLogEntry || editingLogIdx !== null) && (
             <div style={{ display: "flex", gap: "8px", marginTop: "16px", flexWrap: "wrap", alignItems: "flex-end", background: "#1e293b", borderRadius: "10px", padding: "16px", border: "1px solid #334155" }}>
+              <span style={{ fontSize: "12px", fontWeight: 500, color: "#94a3b8", width: "100%", marginBottom: "4px" }}>
+                {editingLogIdx !== null ? "Edit Entry" : "New Entry"}
+              </span>
               {[
                 { key: "date", placeholder: "Date (e.g. Oct 2026)", width: "150px" },
                 { key: "netWorth", placeholder: "Net Worth", width: "110px" },
@@ -1737,12 +1778,21 @@ export default function FinancialRoadmap() {
                   }}
                 />
               ))}
-              <button onClick={() => { addLogEntry(); setShowAddLogEntry(false); }} style={{
+              <button onClick={() => {
+                if (editingLogIdx !== null) {
+                  setLog(prev => prev.map((entry, i) => i === editingLogIdx ? { ...logDraft } : entry));
+                  setEditingLogIdx(null);
+                } else {
+                  addLogEntry();
+                  setShowAddLogEntry(false);
+                }
+                setLogDraft({ date: "", netWorth: "", salary: "", debt: "", credit: "" });
+              }} style={{
                 padding: "8px 16px", fontSize: "12px", fontWeight: 500,
                 borderRadius: "6px", border: "none",
                 background: "#0F6E56", color: "#fff", cursor: "pointer",
               }}>Save</button>
-              <button onClick={() => setShowAddLogEntry(false)} style={{
+              <button onClick={() => { setShowAddLogEntry(false); setEditingLogIdx(null); setLogDraft({ date: "", netWorth: "", salary: "", debt: "", credit: "" }); }} style={{
                 padding: "8px 16px", fontSize: "12px", fontWeight: 500,
                 borderRadius: "6px", border: "1px solid #334155",
                 background: "transparent", color: "#94a3b8", cursor: "pointer",
