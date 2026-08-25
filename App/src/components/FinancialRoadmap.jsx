@@ -1452,7 +1452,7 @@ export default function FinancialRoadmap() {
 
 
     // Net worth chart data — responsive, uses percentage-based layout
-    const chartViewW = 800, chartViewH = 280;
+    const chartViewW = 1000, chartViewH = 260;
     const chartPadLeft = 60, chartPadRight = 30, chartPadTop = 20, chartPadBot = 40;
     const plotW = chartViewW - chartPadLeft - chartPadRight;
     const plotH = chartViewH - chartPadTop - chartPadBot;
@@ -1506,8 +1506,8 @@ export default function FinancialRoadmap() {
               Since {log[0]?.date || "—"}
             </span>
           </div>
-          <div style={{ position: "relative", maxHeight: "320px" }}>
-            <svg width="100%" viewBox={`0 0 ${chartViewW} ${chartViewH}`} preserveAspectRatio="xMidYMid meet" style={{ display: "block", maxHeight: "320px" }}
+          <div style={{ position: "relative" }}>
+            <svg width="100%" viewBox={`0 0 ${chartViewW} ${chartViewH}`} preserveAspectRatio="xMidYMid meet" style={{ display: "block", width: "100%", height: "auto", minHeight: "200px", maxHeight: "400px" }}
               onMouseLeave={() => setHoveredChartPoint(null)}
             >
               <defs>
@@ -1594,7 +1594,6 @@ export default function FinancialRoadmap() {
           <div style={{ width: "1px", height: "36px", background: "#334155", flexShrink: 0 }} />
           {/* Right ~80%: Lifetime Earnings By Year */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <span style={{ fontSize: "16px" }}>📊</span>
             <div>
               <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>LIFETIME EARNINGS BY YEAR</p>
               <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>Total income received each year.</p>
