@@ -1426,7 +1426,7 @@ export default function FinancialRoadmap() {
                               <div key={entry.id} style={{ padding: "12px 14px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                                   <span style={{ fontSize: "12px", color: "#94a3b8" }}>{new Date(entry.date).toLocaleDateString()} {new Date(entry.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#f1f5f9" }}>{entry.accName}</span>
+                                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9" }}>{entry.accName}</span>
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: entry.note ? "6px" : 0 }}>
                                   <span style={{ fontSize: "12px", color: "#94a3b8" }}>${entry.oldBalance.toLocaleString()}</span>
