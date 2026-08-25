@@ -1398,27 +1398,54 @@ export default function FinancialRoadmap() {
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
               {accountChangeLog.length === 0 ? (
                 <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "40px" }}>No changes logged yet. Update a tracked account to start.</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {[...accountChangeLog].reverse().map(entry => (
-                    <div key={entry.id} style={{ padding: "12px 14px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>{new Date(entry.date).toLocaleDateString()} {new Date(entry.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                        <span style={{ fontSize: "11px", fontWeight: 500, color: "#f1f5f9" }}>{entry.accName}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: entry.note ? "6px" : 0 }}>
-                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>${entry.oldBalance.toLocaleString()}</span>
-                        <span style={{ fontSize: "10px", color: "#64748b" }}>→</span>
-                        <span style={{ fontSize: "12px", fontWeight: 500, color: "#f1f5f9" }}>${entry.newBalance.toLocaleString()}</span>
-                        <span style={{ fontSize: "11px", color: entry.change >= 0 ? "#4ade80" : "#f87171", marginLeft: "6px" }}>
-                          {entry.change >= 0 ? "+" : ""}${entry.change.toLocaleString()} ({entry.changePct}%)
-                        </span>
-                      </div>
-                      {entry.note && <p style={{ fontSize: "11px", color: "#64748b", margin: 0, fontStyle: "italic" }}>{entry.note}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
+              ) : (() => {
+                const categoryOrder = [
+                  { key: "savings", label: "Cash", color: "#94a3b8" },
+                  { key: "retirement", label: "Retirement", color: "#3b82f6" },
+                  { key: "brokerage", label: "Brokerage", color: "#059669" },
+                  { key: "speculative", label: "Crypto", color: "#ec4899" },
+                ];
+                const getBadge = (accId) => {
+                  const acc = accounts.find(a => a.id === accId);
+                  return acc?.badge || "savings";
+                };
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                    {categoryOrder.map(cat => {
+                      const entries = [...accountChangeLog].reverse().filter(e => getBadge(e.accId) === cat.key);
+                      if (entries.length === 0) return null;
+                      return (
+                        <div key={cat.key}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: cat.color }} />
+                            <span style={{ fontSize: "12px", fontWeight: 600, color: cat.color, textTransform: "uppercase", letterSpacing: "0.5px" }}>{cat.label}</span>
+                            <span style={{ fontSize: "11px", color: "#64748b" }}>({entries.length})</span>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            {entries.map(entry => (
+                              <div key={entry.id} style={{ padding: "12px 14px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                  <span style={{ fontSize: "12px", color: "#94a3b8" }}>{new Date(entry.date).toLocaleDateString()} {new Date(entry.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#f1f5f9" }}>{entry.accName}</span>
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: entry.note ? "6px" : 0 }}>
+                                  <span style={{ fontSize: "12px", color: "#94a3b8" }}>${entry.oldBalance.toLocaleString()}</span>
+                                  <span style={{ fontSize: "10px", color: "#64748b" }}>→</span>
+                                  <span style={{ fontSize: "12px", fontWeight: 500, color: "#f1f5f9" }}>${entry.newBalance.toLocaleString()}</span>
+                                  <span style={{ fontSize: "11px", color: entry.change >= 0 ? "#4ade80" : "#f87171", marginLeft: "6px" }}>
+                                    {entry.change >= 0 ? "+" : ""}${entry.change.toLocaleString()} ({entry.changePct}%)
+                                  </span>
+                                </div>
+                                {entry.note && <p style={{ fontSize: "11px", color: "#64748b", margin: 0, fontStyle: "italic" }}>{entry.note}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
