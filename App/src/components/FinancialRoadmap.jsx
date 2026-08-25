@@ -1450,8 +1450,6 @@ export default function FinancialRoadmap() {
     const years = Object.keys(earningsData).sort();
     const lifetimeTotal = years.reduce((sum, y) => sum + Object.values(earningsData[y]).reduce((s, v) => s + (v || 0), 0), 0);
 
-    // Debt from latest log entry (same as investment accounts page)
-    const totalDebt = log.length > 0 ? parseFloat(String(log[log.length - 1].debt).replace(/[^0-9.]/g, "")) || 0 : 0;
 
     // Net worth chart data — responsive, uses percentage-based layout
     const chartViewW = 800, chartViewH = 280;
@@ -1501,38 +1499,14 @@ export default function FinancialRoadmap() {
         </div>
 
         {/* ═══ Top Row: Total Earnings + Net Worth Chart ═══ */}
-        <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "20px" }}>
           {/* Left: Total Earnings Summary */}
-          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "24px" }}>
+          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "24px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <p style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 8px" }}>Total Earnings (All Time)</p>
             <p style={{ fontSize: "32px", fontWeight: 700, color: "#a78bfa", margin: "0 0 6px" }}>
               ${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 24px" }}>Money that has touched your accounts</p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "#4ade80", fontSize: "16px" }}>↑</span>
-                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Income</span>
-                </div>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "#f87171", fontSize: "14px" }}>⊡</span>
-                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Debt</span>
-                </div>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "#f87171" }}>${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: parseNw(log[log.length - 1]?.netWorth) >= 0 ? "#4ade80" : "#f87171", fontSize: "14px" }}>↗</span>
-                  <span style={{ fontSize: "13px", color: "#e2e8f0" }}>Current Net Worth</span>
-                </div>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: parseNw(log[log.length - 1]?.netWorth) >= 0 ? "#4ade80" : "#f87171" }}>{formattedNw}</span>
-              </div>
-            </div>
+            <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Money that has touched your accounts</p>
           </div>
 
           {/* Right: Net Worth Over Time Chart */}
@@ -1717,7 +1691,7 @@ export default function FinancialRoadmap() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #334155" }}>
-                  {["Date", "Income (Salary)", "Debt", "Credit", "Net Worth", "Actions"].map(h => (
+                  {["Date", "Debt", "Credit", "Net Worth", "Actions"].map(h => (
                     <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                   ))}
                 </tr>
@@ -1730,7 +1704,6 @@ export default function FinancialRoadmap() {
                   return (
                     <tr key={realIdx} style={{ borderBottom: "1px solid #1e293b" }}>
                       <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.date}</td>
-                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.salary ? `$${Number(entry.salary).toLocaleString()}` : "—"}</td>
                       <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.debt ? `$${Number(String(entry.debt).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
                       <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.credit || "—"}</td>
                       <td style={{ padding: "12px 16px", color: nwColor, fontWeight: 500 }}>
@@ -1761,10 +1734,9 @@ export default function FinancialRoadmap() {
               </span>
               {[
                 { key: "date", placeholder: "Date (e.g. Oct 2026)", width: "150px" },
-                { key: "netWorth", placeholder: "Net Worth", width: "110px" },
-                { key: "salary", placeholder: "Salary", width: "100px" },
-                { key: "debt", placeholder: "Debt", width: "100px" },
-                { key: "credit", placeholder: "Credit", width: "80px" },
+                { key: "debt", placeholder: "Debt", width: "120px" },
+                { key: "credit", placeholder: "Credit", width: "100px" },
+                { key: "netWorth", placeholder: "Net Worth", width: "120px" },
               ].map(field => (
                 <input
                   key={field.key}
