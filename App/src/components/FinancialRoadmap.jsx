@@ -1498,103 +1498,101 @@ export default function FinancialRoadmap() {
           </div>
         </div>
 
-        {/* ═══ Top Row: Total Earnings + Net Worth Chart ═══ */}
-        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "20px" }}>
-          {/* Left: Total Earnings Summary */}
-          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "24px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <p style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 8px" }}>Total Earnings (All Time)</p>
-            <p style={{ fontSize: "32px", fontWeight: 700, color: "#a78bfa", margin: "0 0 6px" }}>
-              ${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-            <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Money that has touched your accounts</p>
+        {/* ═══ Net Worth Over Time Chart (own section, capped height) ═══ */}
+        <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "20px 24px", position: "relative" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>NET WORTH OVER TIME</p>
+            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#0f172a", padding: "4px 10px", borderRadius: "6px", border: "1px solid #334155" }}>
+              Since {log[0]?.date || "—"}
+            </span>
           </div>
-
-          {/* Right: Net Worth Over Time Chart */}
-          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "20px 24px", position: "relative" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>NET WORTH OVER TIME</p>
-              <span style={{ fontSize: "12px", color: "#94a3b8", background: "#0f172a", padding: "4px 10px", borderRadius: "6px", border: "1px solid #334155" }}>
-                Since {log[0]?.date || "—"}
-              </span>
-            </div>
-            <div style={{ position: "relative" }}>
-              <svg width="100%" viewBox={`0 0 ${chartViewW} ${chartViewH}`} preserveAspectRatio="xMidYMid meet" style={{ display: "block" }}
-                onMouseLeave={() => setHoveredChartPoint(null)}
-              >
-                <defs>
-                  <linearGradient id="nwChartFillLg" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0F6E56" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#0F6E56" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                {/* Y-axis grid lines + labels */}
-                {yTickValues.map((val, i) => {
-                  const y = chartPadTop + plotH - ((val - nwChartMin) / nwChartRange) * plotH;
-                  return (
-                    <g key={i}>
-                      <line x1={chartPadLeft} y1={y} x2={chartViewW - chartPadRight} y2={y} stroke="#334155" strokeWidth="0.5" strokeDasharray="4 3" />
-                      <text x={chartPadLeft - 8} y={y + 4} textAnchor="end" fontSize="11" fill="#64748b">{formatCompact(val)}</text>
-                    </g>
-                  );
-                })}
-                {/* Area fill */}
-                {chartPoints.length > 1 && <polygon points={areaPolygon} fill="url(#nwChartFillLg)" />}
-                {/* Line */}
-                {chartPoints.length > 1 && <polyline points={polyline} fill="none" stroke="#0F6E56" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
-                {/* Data points with hover */}
-                {chartPoints.map((p, i) => (
-                  <circle
-                    key={i}
-                    cx={p.x}
-                    cy={p.y}
-                    r={hoveredChartPoint === i ? 6 : 3.5}
-                    fill={hoveredChartPoint === i ? "#4ade80" : "#0F6E56"}
-                    stroke={hoveredChartPoint === i ? "#fff" : "#0f172a"}
-                    strokeWidth={hoveredChartPoint === i ? 2 : 1.5}
-                    style={{ cursor: "pointer", transition: "r 0.15s, fill 0.15s" }}
-                    onMouseEnter={() => setHoveredChartPoint(i)}
-                  />
-                ))}
-                {/* X-axis labels */}
-                {chartPoints.map((p, i) => (
-                  <text key={i} x={p.x} y={chartViewH - 8} textAnchor="middle" fontSize="11" fill="#64748b">{p.label}</text>
-                ))}
-              </svg>
-              {/* Tooltip on hover */}
-              {hoveredChartPoint !== null && chartPoints[hoveredChartPoint] && (() => {
-                const pt = chartPoints[hoveredChartPoint];
-                const pctX = ((pt.x) / chartViewW) * 100;
-                const pctY = ((pt.y) / chartViewH) * 100;
+          <div style={{ position: "relative", maxHeight: "320px" }}>
+            <svg width="100%" viewBox={`0 0 ${chartViewW} ${chartViewH}`} preserveAspectRatio="xMidYMid meet" style={{ display: "block", maxHeight: "320px" }}
+              onMouseLeave={() => setHoveredChartPoint(null)}
+            >
+              <defs>
+                <linearGradient id="nwChartFillLg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0F6E56" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#0F6E56" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* Y-axis grid lines + labels */}
+              {yTickValues.map((val, i) => {
+                const y = chartPadTop + plotH - ((val - nwChartMin) / nwChartRange) * plotH;
                 return (
-                  <div style={{
-                    position: "absolute",
-                    left: `${pctX}%`,
-                    top: `${pctY}%`,
-                    transform: "translate(-50%, -130%)",
-                    background: "#334155",
-                    borderRadius: "8px",
-                    padding: "8px 12px",
-                    fontSize: "12px",
-                    color: "#f1f5f9",
-                    whiteSpace: "nowrap",
-                    pointerEvents: "none",
-                    zIndex: 10,
-                    border: "1px solid #475569",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                  }}>
-                    <div style={{ fontWeight: 600, marginBottom: "2px" }}>{pt.label}</div>
-                    <div style={{ color: pt.value >= 0 ? "#4ade80" : "#f87171", fontWeight: 500 }}>
-                      {pt.value >= 0 ? "$" : "-$"}{Math.abs(pt.value).toLocaleString()}
-                    </div>
-                  </div>
+                  <g key={i}>
+                    <line x1={chartPadLeft} y1={y} x2={chartViewW - chartPadRight} y2={y} stroke="#334155" strokeWidth="0.5" strokeDasharray="4 3" />
+                    <text x={chartPadLeft - 8} y={y + 4} textAnchor="end" fontSize="11" fill="#64748b">{formatCompact(val)}</text>
+                  </g>
                 );
-              })()}
-            </div>
+              })}
+              {/* Area fill */}
+              {chartPoints.length > 1 && <polygon points={areaPolygon} fill="url(#nwChartFillLg)" />}
+              {/* Line */}
+              {chartPoints.length > 1 && <polyline points={polyline} fill="none" stroke="#0F6E56" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+              {/* Data points with hover */}
+              {chartPoints.map((p, i) => (
+                <circle
+                  key={i}
+                  cx={p.x}
+                  cy={p.y}
+                  r={hoveredChartPoint === i ? 6 : 3.5}
+                  fill={hoveredChartPoint === i ? "#4ade80" : "#0F6E56"}
+                  stroke={hoveredChartPoint === i ? "#fff" : "#0f172a"}
+                  strokeWidth={hoveredChartPoint === i ? 2 : 1.5}
+                  style={{ cursor: "pointer", transition: "r 0.15s, fill 0.15s" }}
+                  onMouseEnter={() => setHoveredChartPoint(i)}
+                />
+              ))}
+              {/* X-axis labels */}
+              {chartPoints.map((p, i) => (
+                <text key={i} x={p.x} y={chartViewH - 8} textAnchor="middle" fontSize="11" fill="#64748b">{p.label}</text>
+              ))}
+            </svg>
+            {/* Tooltip on hover */}
+            {hoveredChartPoint !== null && chartPoints[hoveredChartPoint] && (() => {
+              const pt = chartPoints[hoveredChartPoint];
+              const pctX = ((pt.x) / chartViewW) * 100;
+              const pctY = ((pt.y) / chartViewH) * 100;
+              return (
+                <div style={{
+                  position: "absolute",
+                  left: `${pctX}%`,
+                  top: `${pctY}%`,
+                  transform: "translate(-50%, -130%)",
+                  background: "#334155",
+                  borderRadius: "8px",
+                  padding: "8px 12px",
+                  fontSize: "12px",
+                  color: "#f1f5f9",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                  zIndex: 10,
+                  border: "1px solid #475569",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: "2px" }}>{pt.label}</div>
+                  <div style={{ color: pt.value >= 0 ? "#4ade80" : "#f87171", fontWeight: 500 }}>
+                    {pt.value >= 0 ? "$" : "-$"}{Math.abs(pt.value).toLocaleString()}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
-        {/* ═══ Lifetime Earnings By Year Strip ═══ */}
+        {/* ═══ Total Earnings + Lifetime Earnings By Year (single row) ═══ */}
         <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "16px 24px", display: "flex", alignItems: "center", gap: "24px" }}>
+          {/* Left ~20%: Total Earnings */}
+          <div style={{ flexShrink: 0, minWidth: "180px" }}>
+            <p style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 4px" }}>Total Earnings (All Time)</p>
+            <p style={{ fontSize: "22px", fontWeight: 700, color: "#a78bfa", margin: 0 }}>
+              ${lifetimeTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          {/* Divider */}
+          <div style={{ width: "1px", height: "36px", background: "#334155", flexShrink: 0 }} />
+          {/* Right ~80%: Lifetime Earnings By Year */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             <span style={{ fontSize: "16px" }}>📊</span>
             <div>
