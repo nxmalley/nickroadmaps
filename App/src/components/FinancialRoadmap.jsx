@@ -153,6 +153,21 @@ function migrateEarnedItems(items) {
   return result;
 }
 
+// Back-fill the `assets` field on saved log entries that predate the Assets column.
+// Uses known seed values by date, else derives assets = netWorth + debt.
+function migrateLog(entries) {
+  if (!Array.isArray(entries)) return entries;
+  const seedByDate = {};
+  for (const e of INITIAL_LOG) seedByDate[e.date] = e.assets;
+  const num = (v) => parseFloat(String(v ?? "").replace(/[^0-9.\u002D]/g, "")) || 0;
+  return entries.map(entry => {
+    if (entry.assets !== undefined && entry.assets !== "" && entry.assets !== null) return entry;
+    const seeded = seedByDate[entry.date];
+    const assets = seeded !== undefined ? seeded : String(num(entry.netWorth) + num(entry.debt));
+    return { ...entry, assets };
+  });
+}
+
 /* ─── Component ─── */
 export default function FinancialRoadmap() {
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -251,7 +266,7 @@ export default function FinancialRoadmap() {
         if (res.ok) {
           const data = await res.json();
           if (data && !cancelled) {
-            if (data.log) setLog(data.log);
+            if (data.log) setLog(migrateLog(data.log));
             if (data.accountChangeLog) setAccountChangeLog(data.accountChangeLog);
             if (data.accounts) setAccounts(data.accounts);
             if (data.salaryHistory) setSalaryHistory(data.salaryHistory);
