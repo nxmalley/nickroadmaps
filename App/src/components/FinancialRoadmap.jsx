@@ -234,9 +234,9 @@ export default function FinancialRoadmap() {
 
   // Other Assets (e.g. car value) — loaded from Upstash on mount
   const [otherAssets, setOtherAssets] = useState([
-    { id: "oa-corolla", type: "Car Value", name: "2010 Toyota Corolla S", value: 7500 },
+    { id: "oa-corolla", category: "vehicles", type: "Car Value", name: "2010 Toyota Corolla S", value: 7500 },
   ]);
-  const [otherAssetDraft, setOtherAssetDraft] = useState({ name: "", value: "" });
+  const [otherAssetDraft, setOtherAssetDraft] = useState({ category: "vehicles", name: "", value: "" });
 
   // Completed/archived groups — loaded from Upstash on mount
   const [completedArchive, setCompletedArchive] = useState([]);
@@ -1129,6 +1129,14 @@ export default function FinancialRoadmap() {
 
     const badgeColors = { savings: "#94a3b8", retirement: "#3b82f6", brokerage: "#059669", speculative: "#ec4899" };
     const badgeLabels = { savings: "Cash", retirement: "Retirement", brokerage: "Brokerage", speculative: "Crypto" };
+
+    // Other-asset categories: how each is tagged, charted, and iconed.
+    const OTHER_ASSET_CATEGORIES = {
+      vehicles: { tag: "Car Value", chartLabel: "Vehicles", color: "#7c3aed", placeholder: "Car (e.g. 2024 GMC Yukon)" },
+      home: { tag: "Home Value", chartLabel: "Real Estate", color: "#eab308", placeholder: "Property (e.g. Primary Residence)" },
+      other: { tag: "Other", chartLabel: "Other", color: "#f97316", placeholder: "Asset (e.g. Art collection)" },
+    };
+    const getAssetCat = (asset) => OTHER_ASSET_CATEGORIES[asset.category] || OTHER_ASSET_CATEGORIES.other;
     const trackedAccounts = ["acc3", "acc4", "acc5", "acc6"]; // Empower, Fidelity Roth, Fidelity CMA, Capital One
 
     function getGrowth(accId) {
@@ -1183,13 +1191,20 @@ export default function FinancialRoadmap() {
       setUpdateDraft({ value: "", note: "" });
     }
 
+    // Per-category totals for other assets, charted under their own labels.
+    const otherAssetCatData = Object.entries(OTHER_ASSET_CATEGORIES).map(([key, cfg]) => ({
+      label: cfg.chartLabel,
+      value: otherAssets.filter(a => (a.category || "other") === key).reduce((s, a) => s + (Number(a.value) || 0), 0),
+      color: cfg.color,
+    }));
+
     // Allocation donut
     const allocData = [
       { label: "Cash", value: cashTotal, color: "#94a3b8" },
       { label: "Retirement", value: retirementTotal, color: "#3b82f6" },
       { label: "Brokerage", value: brokerageTotal, color: "#059669" },
       { label: "Crypto", value: cryptoTotal, color: "#ec4899" },
-      { label: "Other Assets", value: otherAssetsTotal, color: "#f59e0b" },
+      ...otherAssetCatData,
     ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
     const allocTotal = allocData.reduce((s, d) => s + d.value, 0);
 
@@ -1337,19 +1352,20 @@ export default function FinancialRoadmap() {
         <div style={{ marginTop: "40px", paddingTop: "32px", borderTop: "1px solid #1e293b" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <div>
-              <h4 style={{ fontSize: "22px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Other Assets</h4>
-              <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>Assets outside your accounts, like vehicles.</p>
+              <h4 style={{ fontSize: "22px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>Other Assets</h4>
             </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {otherAssets.map(asset => (
+            {otherAssets.map(asset => {
+              const cat = getAssetCat(asset);
+              return (
               <div key={asset.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "16px 24px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: "20px", alignItems: "center" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🚗</div>
+                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>{cat.icon}</div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                     <span style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9" }}>{asset.name}</span>
-                    <span style={{ fontSize: "12px", padding: "3px 8px", borderRadius: "4px", fontWeight: 500, background: "#f59e0b22", color: "#f59e0b" }}>Car Value</span>
+                    <span style={{ fontSize: "12px", padding: "3px 8px", borderRadius: "4px", fontWeight: 500, background: `${cat.color}22`, color: cat.color }}>{cat.tag}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -1363,19 +1379,28 @@ export default function FinancialRoadmap() {
                   <button onClick={() => setOtherAssets(prev => prev.filter(a => a.id !== asset.id))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#f87171", padding: "2px 6px" }} title="Remove asset">🗑</button>
                 </div>
               </div>
-            ))}
+              );
+            })}
             {otherAssets.length === 0 && (
-              <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0" }}>No other assets yet. Add a car value below.</p>
+              <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0" }}>No other assets yet. Add one below.</p>
             )}
           </div>
 
-          {/* Add car value form */}
+          {/* Add other-asset form */}
           <div style={{ display: "flex", gap: "10px", marginTop: "16px", alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "12px", padding: "8px 12px", borderRadius: "6px", fontWeight: 500, background: "#f59e0b22", color: "#f59e0b", whiteSpace: "nowrap" }}>Car Value</span>
+            <select
+              value={otherAssetDraft.category}
+              onChange={e => setOtherAssetDraft(prev => ({ ...prev, category: e.target.value }))}
+              style={{ padding: "10px 14px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0", cursor: "pointer" }}
+            >
+              <option value="vehicles">Car Value</option>
+              <option value="home">Home Value</option>
+              <option value="other">Other</option>
+            </select>
             <input
               value={otherAssetDraft.name}
               onChange={e => setOtherAssetDraft(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Car (e.g. 2024 GMC Yukon)"
+              placeholder={OTHER_ASSET_CATEGORIES[otherAssetDraft.category]?.placeholder || "Asset name"}
               style={{ flex: "1 1 240px", padding: "10px 14px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0" }}
             />
             <input
@@ -1388,8 +1413,9 @@ export default function FinancialRoadmap() {
             <button
               onClick={() => {
                 if (!otherAssetDraft.name.trim() || !otherAssetDraft.value) return;
-                setOtherAssets(prev => [...prev, { id: `oa-${Date.now()}`, type: "Car Value", name: otherAssetDraft.name.trim(), value: Number(otherAssetDraft.value) || 0 }]);
-                setOtherAssetDraft({ name: "", value: "" });
+                const cfg = OTHER_ASSET_CATEGORIES[otherAssetDraft.category] || OTHER_ASSET_CATEGORIES.other;
+                setOtherAssets(prev => [...prev, { id: `oa-${Date.now()}`, category: otherAssetDraft.category, type: cfg.tag, name: otherAssetDraft.name.trim(), value: Number(otherAssetDraft.value) || 0 }]);
+                setOtherAssetDraft({ category: "vehicles", name: "", value: "" });
               }}
               style={{ padding: "10px 18px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#0F6E56", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}
             >+ Add</button>
