@@ -1414,7 +1414,23 @@ export default function FinancialRoadmap() {
               onClick={() => {
                 if (!otherAssetDraft.name.trim() || !otherAssetDraft.value) return;
                 const cfg = OTHER_ASSET_CATEGORIES[otherAssetDraft.category] || OTHER_ASSET_CATEGORIES.other;
-                setOtherAssets(prev => [...prev, { id: `oa-${Date.now()}`, category: otherAssetDraft.category, type: cfg.tag, name: otherAssetDraft.name.trim(), value: Number(otherAssetDraft.value) || 0 }]);
+                const newId = `oa-${Date.now()}`;
+                const newVal = Number(otherAssetDraft.value) || 0;
+                const newName = otherAssetDraft.name.trim();
+                setOtherAssets(prev => [...prev, { id: newId, category: otherAssetDraft.category, type: cfg.tag, name: newName, value: newVal }]);
+                setAccountChangeLog(prev => [...prev, {
+                  id: `log-${Date.now()}`,
+                  accId: newId,
+                  accName: newName,
+                  accType: cfg.tag,
+                  assetKind: "other",
+                  oldBalance: 0,
+                  newBalance: newVal,
+                  change: newVal,
+                  changePct: "N/A",
+                  note: `Added new ${cfg.tag} asset`,
+                  date: new Date().toISOString(),
+                }]);
                 setOtherAssetDraft({ category: "vehicles", name: "", value: "" });
               }}
               style={{ padding: "10px 18px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#0F6E56", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}
