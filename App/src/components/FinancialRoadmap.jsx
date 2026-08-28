@@ -105,14 +105,14 @@ const RULES = [
 ];
 
 const INITIAL_LOG = [
-  { date: "Oct 2024", netWorth: "-10,465", salary: "35,800", debt: "35,899", credit: "-" },
-  { date: "Jan 2025", netWorth: "-13,571", salary: "35,800", debt: "42,508", credit: "-" },
-  { date: "Apr 2025", netWorth: "-9,153", salary: "43,700", debt: "40,695", credit: "-" },
-  { date: "Jul 2025", netWorth: "-7,566", salary: "43,700", debt: "39,152", credit: "-" },
-  { date: "Oct 2025", netWorth: "-3,103", salary: "43,700", debt: "37,380", credit: "-" },
-  { date: "Jan 2026", netWorth: "7,001", salary: "54,142", debt: "32,185", credit: "785" },
-  { date: "Apr 2026", netWorth: "14,834", salary: "54,142", debt: "24,570", credit: "785" },
-  { date: "Jul 2026", netWorth: "27,129", salary: "100,000", debt: "15,206", credit: "770" },
+  { date: "Oct 2024", assets: "25,434", netWorth: "-10,465", salary: "35,800", debt: "35,899", credit: "-" },
+  { date: "Jan 2025", assets: "28,937", netWorth: "-13,571", salary: "35,800", debt: "42,508", credit: "-" },
+  { date: "Apr 2025", assets: "31,542", netWorth: "-9,153", salary: "43,700", debt: "40,695", credit: "-" },
+  { date: "Jul 2025", assets: "31,586", netWorth: "-7,566", salary: "43,700", debt: "39,152", credit: "-" },
+  { date: "Oct 2025", assets: "34,277", netWorth: "-3,103", salary: "43,700", debt: "37,380", credit: "-" },
+  { date: "Jan 2026", assets: "39,186", netWorth: "7,001", salary: "54,142", debt: "32,185", credit: "785" },
+  { date: "Apr 2026", assets: "39,404", netWorth: "14,834", salary: "54,142", debt: "24,570", credit: "785" },
+  { date: "Jul 2026", assets: "42,335", netWorth: "27,129", salary: "100,000", debt: "15,206", credit: "770" },
 ];
 
 /* ─── Migration helper (pure — no component deps) ─── */
@@ -196,7 +196,7 @@ export default function FinancialRoadmap() {
 
   // Net worth log — loaded from Upstash on mount
   const [log, setLog] = useState(INITIAL_LOG);
-  const [logDraft, setLogDraft] = useState({ date: "", netWorth: "", salary: "", debt: "", credit: "" });
+  const [logDraft, setLogDraft] = useState({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" });
 
   // Future Implementation notes — loaded from Upstash on mount
   const [futureNotes, setFutureNotes] = useState([
@@ -216,6 +216,12 @@ export default function FinancialRoadmap() {
     { id: "acc6", name: "Capital One", type: "HYSA", badge: "savings", balance: 603, apy: "3.00%", description: "High-yield savings. 360 Performance.", metric: "apy" },
     { id: "acc7", name: "Robinhood", type: "Crypto", badge: "speculative", balance: 531, fund: "DOGE, XRP", description: "Crypto holdings.", metric: "none" },
   ]);
+
+  // Other Assets (e.g. car value) — loaded from Upstash on mount
+  const [otherAssets, setOtherAssets] = useState([
+    { id: "oa-corolla", type: "Car Value", name: "2010 Toyota Corolla S", value: 7500 },
+  ]);
+  const [otherAssetDraft, setOtherAssetDraft] = useState({ name: "", value: "" });
 
   // Completed/archived groups — loaded from Upstash on mount
   const [completedArchive, setCompletedArchive] = useState([]);
@@ -252,6 +258,7 @@ export default function FinancialRoadmap() {
             if (data.earningsData) setEarningsData(data.earningsData);
             if (data.futureNotes) setFutureNotes(data.futureNotes);
             if (data.earnedItems) setEarnedItems(migrateEarnedItems(data.earnedItems));
+            if (data.otherAssets) setOtherAssets(data.otherAssets);
             if (data.completedArchive) setCompletedArchive(data.completedArchive);
           }
         }
@@ -264,13 +271,13 @@ export default function FinancialRoadmap() {
   // Save all financial data to server whenever any piece changes
   useEffect(() => {
     if (!dataLoaded) return; // Don't save before initial load completes
-    const data = { log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, completedArchive };
+    const data = { log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, completedArchive };
     fetch('/api/financial-data', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }).catch(() => { /* silent */ });
-  }, [dataLoaded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, completedArchive]);
+  }, [dataLoaded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, completedArchive]);
 
   // Auto-archive fully completed groups
   useEffect(() => {
@@ -322,10 +329,18 @@ export default function FinancialRoadmap() {
 
   // Net worth parsing helpers
   const parseNw = (val) => parseFloat(String(val).replace(/[^0-9.\u002D]/g, "")) || 0;
+  // Net worth = Assets − Liabilities (Debt). Falls back to stored netWorth for legacy entries without assets.
+  const computeNw = (entry) => {
+    if (!entry) return 0;
+    if (entry.assets !== undefined && entry.assets !== "" && entry.assets !== null) {
+      return parseNw(entry.assets) - parseNw(entry.debt);
+    }
+    return parseNw(entry.netWorth);
+  };
   const latestEntry = log[log.length - 1];
-  const currentNw = latestEntry ? parseNw(latestEntry.netWorth) : 0;
+  const currentNw = computeNw(latestEntry);
   const prevEntry = log.length >= 2 ? log[log.length - 2] : null;
-  const prevNw = prevEntry ? parseNw(prevEntry.netWorth) : null;
+  const prevNw = prevEntry ? computeNw(prevEntry) : null;
   const nwDelta = prevNw !== null ? currentNw - prevNw : null;
   const goal = 5000000;
   const goalPct = goal > 0 ? Math.max(0, Math.min((currentNw / goal) * 100, 100)) : 0;
@@ -335,7 +350,7 @@ export default function FinancialRoadmap() {
     : `-$${Math.abs(currentNw).toLocaleString()}`;
 
   // Sparkline points
-  const nwValues = log.map(e => parseNw(e.netWorth));
+  const nwValues = log.map(e => computeNw(e));
   const sparkW = 150, sparkH = 40;
   const minNw = Math.min(...nwValues);
   const maxNw = Math.max(...nwValues);
@@ -345,12 +360,6 @@ export default function FinancialRoadmap() {
     const y = sparkH - ((v - minNw) / nwRange) * (sparkH - 4) - 2;
     return `${x},${y}`;
   }).join(" ");
-
-  function addLogEntry() {
-    if (!logDraft.date || !logDraft.netWorth) return;
-    setLog(prev => [...prev, { ...logDraft }]);
-    setLogDraft({ date: "", netWorth: "", salary: "", debt: "", credit: "" });
-  }
 
 
 
@@ -1094,7 +1103,9 @@ export default function FinancialRoadmap() {
       setShowSalaryForm(false);
     }
 
-    const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
+    const accountsTotal = accounts.reduce((s, a) => s + (a.balance || 0), 0);
+    const otherAssetsTotal = otherAssets.reduce((s, a) => s + (Number(a.value) || 0), 0);
+    const totalBalance = accountsTotal + otherAssetsTotal;
     const cashTotal = accounts.filter(a => a.badge === "savings").reduce((s, a) => s + (a.balance || 0), 0);
     const retirementTotal = accounts.filter(a => a.badge === "retirement").reduce((s, a) => s + (a.balance || 0), 0);
     const brokerageTotal = accounts.filter(a => a.badge === "brokerage").reduce((s, a) => s + (a.balance || 0), 0);
@@ -1120,21 +1131,30 @@ export default function FinancialRoadmap() {
       setUpdateDraft({ value: String(acc.balance), note: "" });
     }
 
+    function openOtherAssetModal(asset) {
+      setUpdateModal({ accId: asset.id, accName: asset.name, accType: asset.type, currentBalance: Number(asset.value) || 0, isOtherAsset: true });
+      setUpdateDraft({ value: String(Number(asset.value) || 0), note: "" });
+    }
+
     function confirmUpdate() {
       if (!updateModal) return;
       const newBal = parseFloat(updateDraft.value) || 0;
       const oldBal = updateModal.currentBalance;
 
-      // Update balance
-      setAccounts(prev => prev.map(a => a.id === updateModal.accId ? { ...a, balance: newBal } : a));
+      if (updateModal.isOtherAsset) {
+        setOtherAssets(prev => prev.map(a => a.id === updateModal.accId ? { ...a, value: newBal } : a));
+      } else {
+        setAccounts(prev => prev.map(a => a.id === updateModal.accId ? { ...a, balance: newBal } : a));
+      }
 
-      // Log the change if tracked account
-      if (trackedAccounts.includes(updateModal.accId)) {
+      // Log the change for tracked accounts and all other assets
+      if (updateModal.isOtherAsset || trackedAccounts.includes(updateModal.accId)) {
         setAccountChangeLog(prev => [...prev, {
           id: `log-${Date.now()}`,
           accId: updateModal.accId,
           accName: updateModal.accName,
           accType: updateModal.accType,
+          assetKind: updateModal.isOtherAsset ? "other" : "account",
           oldBalance: oldBal,
           newBalance: newBal,
           change: newBal - oldBal,
@@ -1154,6 +1174,7 @@ export default function FinancialRoadmap() {
       { label: "Retirement", value: retirementTotal, color: "#3b82f6" },
       { label: "Brokerage", value: brokerageTotal, color: "#059669" },
       { label: "Crypto", value: cryptoTotal, color: "#ec4899" },
+      { label: "Other Assets", value: otherAssetsTotal, color: "#f59e0b" },
     ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
     const allocTotal = allocData.reduce((s, d) => s + d.value, 0);
 
@@ -1297,6 +1318,72 @@ export default function FinancialRoadmap() {
           </div>
         </div>
 
+        {/* ═══ Other Assets ═══ */}
+        <div style={{ marginTop: "40px", paddingTop: "32px", borderTop: "1px solid #1e293b" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div>
+              <h4 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Other Assets</h4>
+              <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>Assets outside your accounts, like vehicles.</p>
+            </div>
+            <span style={{ fontSize: "13px", color: "#64748b" }}>
+              Total: <span style={{ color: "#f1f5f9", fontWeight: 600 }}>${otherAssets.reduce((s, a) => s + (Number(a.value) || 0), 0).toLocaleString()}</span>
+            </span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {otherAssets.map(asset => (
+              <div key={asset.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "16px 24px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: "20px", alignItems: "center" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🚗</div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9" }}>{asset.name}</span>
+                    <span style={{ fontSize: "12px", padding: "3px 8px", borderRadius: "4px", fontWeight: 500, background: "#f59e0b22", color: "#f59e0b" }}>Car Value</span>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 2px" }}>Estimated Value</p>
+                  <p style={{ fontSize: "20px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>${(Number(asset.value) || 0).toLocaleString()}</p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <button onClick={() => openOtherAssetModal(asset)} style={{ padding: "8px 16px", fontSize: "13px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }}>
+                    Update
+                  </button>
+                  <button onClick={() => setOtherAssets(prev => prev.filter(a => a.id !== asset.id))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#f87171", padding: "2px 6px" }} title="Remove asset">🗑</button>
+                </div>
+              </div>
+            ))}
+            {otherAssets.length === 0 && (
+              <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0" }}>No other assets yet. Add a car value below.</p>
+            )}
+          </div>
+
+          {/* Add car value form */}
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px", alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "12px", padding: "8px 12px", borderRadius: "6px", fontWeight: 500, background: "#f59e0b22", color: "#f59e0b", whiteSpace: "nowrap" }}>Car Value</span>
+            <input
+              value={otherAssetDraft.name}
+              onChange={e => setOtherAssetDraft(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Car (e.g. 2024 GMC Yukon)"
+              style={{ flex: "1 1 240px", padding: "10px 14px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0" }}
+            />
+            <input
+              type="number"
+              value={otherAssetDraft.value}
+              onChange={e => setOtherAssetDraft(prev => ({ ...prev, value: e.target.value }))}
+              placeholder="Worth ($)"
+              style={{ width: "160px", padding: "10px 14px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#1e293b", color: "#e2e8f0" }}
+            />
+            <button
+              onClick={() => {
+                if (!otherAssetDraft.name.trim() || !otherAssetDraft.value) return;
+                setOtherAssets(prev => [...prev, { id: `oa-${Date.now()}`, type: "Car Value", name: otherAssetDraft.name.trim(), value: Number(otherAssetDraft.value) || 0 }]);
+                setOtherAssetDraft({ name: "", value: "" });
+              }}
+              style={{ padding: "10px 18px", fontSize: "13px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#0F6E56", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}
+            >+ Add</button>
+          </div>
+        </div>
+
         {/* Salary History Slide-out Panel */}
         {showSalaryPanel && (
           <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "480px", background: "#0f172a", borderLeft: "1px solid #334155", zIndex: 1000, display: "flex", flexDirection: "column", boxShadow: "-4px 0 20px rgba(0,0,0,0.4)" }}>
@@ -1404,15 +1491,17 @@ export default function FinancialRoadmap() {
                   { key: "retirement", label: "Retirement", color: "#3b82f6" },
                   { key: "brokerage", label: "Brokerage", color: "#059669" },
                   { key: "speculative", label: "Crypto", color: "#ec4899" },
+                  { key: "other", label: "Other Assets", color: "#f59e0b" },
                 ];
-                const getBadge = (accId) => {
-                  const acc = accounts.find(a => a.id === accId);
+                const getCategory = (entry) => {
+                  if (entry.assetKind === "other") return "other";
+                  const acc = accounts.find(a => a.id === entry.accId);
                   return acc?.badge || "savings";
                 };
                 return (
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                     {categoryOrder.map(cat => {
-                      const entries = [...accountChangeLog].reverse().filter(e => getBadge(e.accId) === cat.key);
+                      const entries = [...accountChangeLog].reverse().filter(e => getCategory(e) === cat.key);
                       if (entries.length === 0) return null;
                       return (
                         <div key={cat.key}>
@@ -1483,7 +1572,7 @@ export default function FinancialRoadmap() {
     const chartPadLeft = 60, chartPadRight = 30, chartPadTop = 20, chartPadBot = 40;
     const plotW = chartViewW - chartPadLeft - chartPadRight;
     const plotH = chartViewH - chartPadTop - chartPadBot;
-    const nwChartValues = log.map(e => parseNw(e.netWorth));
+    const nwChartValues = log.map(e => computeNw(e));
     const nwChartMin = Math.min(...nwChartValues, 0);
     const nwChartMax = Math.max(...nwChartValues, 1);
     const nwChartRange = nwChartMax - nwChartMin || 1;
@@ -1715,7 +1804,7 @@ export default function FinancialRoadmap() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #334155" }}>
-                  {["Date", "Debt", "Credit", "Net Worth", "Actions"].map(h => (
+                  {["Date", "Assets", "Debt", "Credit", "Net Worth", "Actions"].map(h => (
                     <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                   ))}
                 </tr>
@@ -1723,11 +1812,12 @@ export default function FinancialRoadmap() {
               <tbody>
                 {[...log].reverse().map((entry, idx) => {
                   const realIdx = log.length - 1 - idx;
-                  const nwVal = parseNw(entry.netWorth);
+                  const nwVal = computeNw(entry);
                   const nwColor = nwVal >= 0 ? "#4ade80" : "#f87171";
                   return (
                     <tr key={realIdx} style={{ borderBottom: "1px solid #1e293b" }}>
                       <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.date}</td>
+                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.assets ? `$${Number(String(entry.assets).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
                       <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.debt ? `$${Number(String(entry.debt).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
                       <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.credit || "—"}</td>
                       <td style={{ padding: "12px 16px", color: nwColor, fontWeight: 500 }}>
@@ -1736,7 +1826,7 @@ export default function FinancialRoadmap() {
                       <td style={{ padding: "12px 16px" }}>
                         <button onClick={() => {
                           setEditingLogIdx(realIdx);
-                          setLogDraft({ date: entry.date, netWorth: entry.netWorth, salary: entry.salary || "", debt: entry.debt || "", credit: entry.credit || "" });
+                          setLogDraft({ date: entry.date, assets: entry.assets || "", netWorth: entry.netWorth || "", salary: entry.salary || "", debt: entry.debt || "", credit: entry.credit || "" });
                         }} style={{
                           background: "none", border: "none", cursor: "pointer",
                           fontSize: "13px", color: "#94a3b8", padding: "2px 6px",
@@ -1758,9 +1848,9 @@ export default function FinancialRoadmap() {
               </span>
               {[
                 { key: "date", placeholder: "Date (e.g. Oct 2026)", width: "150px" },
+                { key: "assets", placeholder: "Assets", width: "120px" },
                 { key: "debt", placeholder: "Debt", width: "120px" },
                 { key: "credit", placeholder: "Credit", width: "100px" },
-                { key: "netWorth", placeholder: "Net Worth", width: "120px" },
               ].map(field => (
                 <input
                   key={field.key}
@@ -1774,21 +1864,36 @@ export default function FinancialRoadmap() {
                   }}
                 />
               ))}
+              {/* Computed Net Worth preview (Assets − Debt) */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "10px", color: "#64748b" }}>Net Worth (auto)</span>
+                {(() => {
+                  const nw = (parseNw(logDraft.assets) || 0) - (parseNw(logDraft.debt) || 0);
+                  return (
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: nw >= 0 ? "#4ade80" : "#f87171", minWidth: "100px" }}>
+                      {nw >= 0 ? `$${nw.toLocaleString()}` : `-$${Math.abs(nw).toLocaleString()}`}
+                    </span>
+                  );
+                })()}
+              </div>
               <button onClick={() => {
+                const computed = String((parseNw(logDraft.assets) || 0) - (parseNw(logDraft.debt) || 0));
+                const entryToSave = { ...logDraft, netWorth: computed };
                 if (editingLogIdx !== null) {
-                  setLog(prev => prev.map((entry, i) => i === editingLogIdx ? { ...logDraft } : entry));
+                  setLog(prev => prev.map((entry, i) => i === editingLogIdx ? entryToSave : entry));
                   setEditingLogIdx(null);
                 } else {
-                  addLogEntry();
+                  if (!logDraft.date || !logDraft.assets) return;
+                  setLog(prev => [...prev, entryToSave]);
                   setShowAddLogEntry(false);
                 }
-                setLogDraft({ date: "", netWorth: "", salary: "", debt: "", credit: "" });
+                setLogDraft({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" });
               }} style={{
                 padding: "8px 16px", fontSize: "12px", fontWeight: 500,
                 borderRadius: "6px", border: "none",
                 background: "#0F6E56", color: "#fff", cursor: "pointer",
               }}>Save</button>
-              <button onClick={() => { setShowAddLogEntry(false); setEditingLogIdx(null); setLogDraft({ date: "", netWorth: "", salary: "", debt: "", credit: "" }); }} style={{
+              <button onClick={() => { setShowAddLogEntry(false); setEditingLogIdx(null); setLogDraft({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" }); }} style={{
                 padding: "8px 16px", fontSize: "12px", fontWeight: 500,
                 borderRadius: "6px", border: "1px solid #334155",
                 background: "transparent", color: "#94a3b8", cursor: "pointer",
