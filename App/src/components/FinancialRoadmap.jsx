@@ -1801,11 +1801,11 @@ export default function FinancialRoadmap() {
           </div>
 
           <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #334155" }}>
                   {["Date", "Assets", "Debt", "Credit", "Net Worth", "Actions"].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                    <th key={h} style={{ width: h === "Actions" ? "80px" : "auto", textAlign: "left", padding: "12px 16px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1816,14 +1816,14 @@ export default function FinancialRoadmap() {
                   const nwColor = nwVal >= 0 ? "#4ade80" : "#f87171";
                   return (
                     <tr key={realIdx} style={{ borderBottom: "1px solid #1e293b" }}>
-                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.date}</td>
-                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.assets ? `$${Number(String(entry.assets).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
-                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.debt ? `$${Number(String(entry.debt).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
-                      <td style={{ padding: "12px 16px", color: "#e2e8f0" }}>{entry.credit || "—"}</td>
-                      <td style={{ padding: "12px 16px", color: nwColor, fontWeight: 500 }}>
+                      <td style={{ textAlign: "left", padding: "12px 16px", color: "#e2e8f0" }}>{entry.date}</td>
+                      <td style={{ textAlign: "left", padding: "12px 16px", color: "#e2e8f0" }}>{entry.assets ? `$${Number(String(entry.assets).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
+                      <td style={{ textAlign: "left", padding: "12px 16px", color: "#e2e8f0" }}>{entry.debt ? `$${Number(String(entry.debt).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</td>
+                      <td style={{ textAlign: "left", padding: "12px 16px", color: "#e2e8f0" }}>{entry.credit || "—"}</td>
+                      <td style={{ textAlign: "left", padding: "12px 16px", color: nwColor, fontWeight: 500 }}>
                         {nwVal >= 0 ? `$${nwVal.toLocaleString()}` : `-$${Math.abs(nwVal).toLocaleString()}`}
                       </td>
-                      <td style={{ padding: "12px 16px" }}>
+                      <td style={{ textAlign: "left", padding: "12px 16px" }}>
                         <button onClick={() => {
                           setEditingLogIdx(realIdx);
                           setLogDraft({ date: entry.date, assets: entry.assets || "", netWorth: entry.netWorth || "", salary: entry.salary || "", debt: entry.debt || "", credit: entry.credit || "" });
@@ -1839,71 +1839,65 @@ export default function FinancialRoadmap() {
             </table>
           </div>
 
-          {/* Add entry inline form */}
-          {/* Add/Edit entry inline form */}
-          {(showAddLogEntry || editingLogIdx !== null) && (
-            <div style={{ display: "flex", gap: "8px", marginTop: "16px", flexWrap: "wrap", alignItems: "flex-end", background: "#1e293b", borderRadius: "10px", padding: "16px", border: "1px solid #334155" }}>
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "#94a3b8", width: "100%", marginBottom: "4px" }}>
-                {editingLogIdx !== null ? "Edit Entry" : "New Entry"}
-              </span>
-              {[
-                { key: "date", placeholder: "Date (e.g. Oct 2026)", width: "150px" },
-                { key: "assets", placeholder: "Assets", width: "120px" },
-                { key: "debt", placeholder: "Debt", width: "120px" },
-                { key: "credit", placeholder: "Credit", width: "100px" },
-              ].map(field => (
-                <input
-                  key={field.key}
-                  value={logDraft[field.key]}
-                  onChange={e => setLogDraft(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  style={{
-                    width: field.width, padding: "8px 12px", fontSize: "12px",
-                    border: "1px solid #334155", borderRadius: "6px",
-                    background: "#0f172a", color: "#e2e8f0",
-                  }}
-                />
-              ))}
-              {/* Computed Net Worth preview (Assets − Debt) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "10px", color: "#64748b" }}>Net Worth (auto)</span>
-                {(() => {
-                  const nw = (parseNw(logDraft.assets) || 0) - (parseNw(logDraft.debt) || 0);
-                  return (
-                    <span style={{ fontSize: "13px", fontWeight: 600, color: nw >= 0 ? "#4ade80" : "#f87171", minWidth: "100px" }}>
-                      {nw >= 0 ? `$${nw.toLocaleString()}` : `-$${Math.abs(nw).toLocaleString()}`}
-                    </span>
-                  );
-                })()}
+          {/* Add/Edit entry inline form — columns aligned under the table headers */}
+          {(showAddLogEntry || editingLogIdx !== null) && (() => {
+            const computedNw = (parseNw(logDraft.assets) || 0) - (parseNw(logDraft.debt) || 0);
+            const inputStyle = { width: "100%", padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0", boxSizing: "border-box" };
+            const labelStyle = { fontSize: "11px", fontWeight: 500, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px", display: "block" };
+            const save = () => {
+              const entryToSave = { ...logDraft, netWorth: String(computedNw) };
+              if (editingLogIdx !== null) {
+                setLog(prev => prev.map((entry, i) => i === editingLogIdx ? entryToSave : entry));
+                setEditingLogIdx(null);
+              } else {
+                if (!logDraft.date || !logDraft.assets) return;
+                setLog(prev => [...prev, entryToSave]);
+                setShowAddLogEntry(false);
+              }
+              setLogDraft({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" });
+            };
+            const cancel = () => { setShowAddLogEntry(false); setEditingLogIdx(null); setLogDraft({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" }); };
+            return (
+              <div style={{ marginTop: "16px", background: "#1e293b", borderRadius: "10px", padding: "16px", border: "1px solid #334155" }}>
+                <span style={{ fontSize: "12px", fontWeight: 500, color: "#94a3b8", display: "block", marginBottom: "12px" }}>
+                  {editingLogIdx !== null ? "Edit Entry" : "New Entry"}
+                </span>
+                {/* Same column layout as the table: Date | Assets | Debt | Credit | Net Worth | Actions */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr auto", gap: "12px", alignItems: "end" }}>
+                  <div>
+                    <label style={labelStyle}>Date</label>
+                    <input value={logDraft.date} onChange={e => setLogDraft(prev => ({ ...prev, date: e.target.value }))} placeholder="e.g. Oct 2026" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Assets</label>
+                    <input value={logDraft.assets} onChange={e => setLogDraft(prev => ({ ...prev, assets: e.target.value }))} placeholder="Assets" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Debt</label>
+                    <input value={logDraft.debt} onChange={e => setLogDraft(prev => ({ ...prev, debt: e.target.value }))} placeholder="Debt" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Credit</label>
+                    <input value={logDraft.credit} onChange={e => setLogDraft(prev => ({ ...prev, credit: e.target.value }))} placeholder="Credit" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Net Worth</label>
+                    <div style={{ padding: "8px 12px", fontSize: "13px", fontWeight: 600, color: computedNw >= 0 ? "#4ade80" : "#f87171" }}>
+                      {computedNw >= 0 ? `$${computedNw.toLocaleString()}` : `-$${Math.abs(computedNw).toLocaleString()}`}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button onClick={save} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#0F6E56", color: "#fff", cursor: "pointer" }}>Save</button>
+                    <button onClick={cancel} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "1px solid #334155", background: "transparent", color: "#94a3b8", cursor: "pointer" }}>Cancel</button>
+                  </div>
+                </div>
               </div>
-              <button onClick={() => {
-                const computed = String((parseNw(logDraft.assets) || 0) - (parseNw(logDraft.debt) || 0));
-                const entryToSave = { ...logDraft, netWorth: computed };
-                if (editingLogIdx !== null) {
-                  setLog(prev => prev.map((entry, i) => i === editingLogIdx ? entryToSave : entry));
-                  setEditingLogIdx(null);
-                } else {
-                  if (!logDraft.date || !logDraft.assets) return;
-                  setLog(prev => [...prev, entryToSave]);
-                  setShowAddLogEntry(false);
-                }
-                setLogDraft({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" });
-              }} style={{
-                padding: "8px 16px", fontSize: "12px", fontWeight: 500,
-                borderRadius: "6px", border: "none",
-                background: "#0F6E56", color: "#fff", cursor: "pointer",
-              }}>Save</button>
-              <button onClick={() => { setShowAddLogEntry(false); setEditingLogIdx(null); setLogDraft({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" }); }} style={{
-                padding: "8px 16px", fontSize: "12px", fontWeight: 500,
-                borderRadius: "6px", border: "1px solid #334155",
-                background: "transparent", color: "#94a3b8", cursor: "pointer",
-              }}>Cancel</button>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Footer note */}
           <p style={{ fontSize: "11px", color: "#64748b", margin: "12px 0 0", fontStyle: "italic" }}>
-            ⓘ Net Worth = Assets − Liabilities. All values are recorded manually.
+            ⓘ Net Worth = Assets − Debt, calculated automatically from each entry.
           </p>
         </div>
       </div>
