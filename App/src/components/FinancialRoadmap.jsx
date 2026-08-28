@@ -1337,12 +1337,9 @@ export default function FinancialRoadmap() {
         <div style={{ marginTop: "40px", paddingTop: "32px", borderTop: "1px solid #1e293b" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <div>
-              <h4 style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Other Assets</h4>
+              <h4 style={{ fontSize: "22px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Other Assets</h4>
               <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>Assets outside your accounts, like vehicles.</p>
             </div>
-            <span style={{ fontSize: "13px", color: "#64748b" }}>
-              Total: <span style={{ color: "#f1f5f9", fontWeight: 600 }}>${otherAssets.reduce((s, a) => s + (Number(a.value) || 0), 0).toLocaleString()}</span>
-            </span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -1820,7 +1817,7 @@ export default function FinancialRoadmap() {
               <thead>
                 <tr style={{ borderBottom: "1px solid #334155" }}>
                   {["Date", "Assets", "Debt", "Credit", "Net Worth", "Actions"].map(h => (
-                    <th key={h} style={{ width: h === "Actions" ? "80px" : "auto", textAlign: "left", padding: "12px 16px", fontWeight: 500, color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                    <th key={h} style={{ width: h === "Actions" ? "80px" : "auto", textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#94a3b8", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
