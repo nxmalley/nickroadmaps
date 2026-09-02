@@ -234,7 +234,7 @@ export default function FinancialRoadmap() {
 
   // Other Assets (e.g. car value) — loaded from Upstash on mount
   const [otherAssets, setOtherAssets] = useState([
-    { id: "oa-corolla", category: "vehicles", type: "Car Value", name: "2010 Toyota Corolla S", value: 7500 },
+    { id: "oa-corolla", category: "vehicles", type: "Car Value", name: "2010 Toyota Corolla S", value: 7500, image: "/Corolla.png" },
   ]);
   const [otherAssetDraft, setOtherAssetDraft] = useState({ category: "vehicles", name: "", value: "" });
 
@@ -273,7 +273,9 @@ export default function FinancialRoadmap() {
             if (data.earningsData) setEarningsData(data.earningsData);
             if (data.futureNotes) setFutureNotes(data.futureNotes);
             if (data.earnedItems) setEarnedItems(migrateEarnedItems(data.earnedItems));
-            if (data.otherAssets) setOtherAssets(data.otherAssets);
+            if (data.otherAssets) setOtherAssets(data.otherAssets.map(a =>
+              a.id === "oa-corolla" && !a.image ? { ...a, image: "/Corolla.png" } : a
+            ));
             if (data.completedArchive) setCompletedArchive(data.completedArchive);
           }
         }
@@ -1361,7 +1363,11 @@ export default function FinancialRoadmap() {
               const cat = getAssetCat(asset);
               return (
               <div key={asset.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "16px 24px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: "20px", alignItems: "center" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>{cat.icon}</div>
+                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", overflow: "hidden", flexShrink: 0 }}>
+                  {asset.image ? (
+                    <img src={asset.image} alt={asset.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : cat.icon}
+                </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                     <span style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9" }}>{asset.name}</span>
