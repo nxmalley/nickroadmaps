@@ -31,13 +31,6 @@ export default function LandingView({ roadmaps, onSelectRoadmap }) {
     return Math.round((completedTasks / totalTasks) * 1000) / 10;
   }
 
-  // Placeholder categories — mirror the "Your Roadmaps" section, ready to fill later.
-  const placeholderSections = [
-    { title: "Career", count: 0 },
-    { title: "Malnax", count: 0 },
-    { title: "Real Estate", count: 0 },
-  ];
-
   return (
     <div style={{ padding: "2rem 1rem", fontFamily: "var(--font-sans)" }}>
       {/* Header section */}
@@ -162,26 +155,6 @@ export default function LandingView({ roadmaps, onSelectRoadmap }) {
         </div>
       )}
 
-      {/* Placeholder category sections — mirror the "Your Roadmaps" layout */}
-      {placeholderSections.map((section) => (
-        <div key={section.title} style={{ marginTop: "2.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-            <div>
-              <h2 style={{ fontSize: "20px", fontWeight: 500, margin: 0, color: "var(--color-text-primary)" }}>
-                {section.title}
-              </h2>
-              <p style={{ fontSize: "13px", color: "var(--color-text-secondary)", margin: "4px 0 0" }}>
-                {section.count} {section.count === 1 ? "roadmap" : "roadmaps"} available
-              </p>
-            </div>
-          </div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "12px",
-          }} />
-        </div>
-      ))}
     </div>
   );
 }

@@ -234,7 +234,7 @@ export default function NavigationBar({ roadmaps, activeId, onSelect, onNavigate
           onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
           onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
         >
-          Dashboard
+          Roadmap Dashboard
         </button>
 
         {/* Roadmap Selector */}
