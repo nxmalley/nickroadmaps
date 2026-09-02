@@ -31,6 +31,13 @@ export default function LandingView({ roadmaps, onSelectRoadmap }) {
     return Math.round((completedTasks / totalTasks) * 1000) / 10;
   }
 
+  // Placeholder categories — bordered sections ready to build features into later.
+  const placeholderSections = [
+    { title: "Career", subtitle: "Career milestones and goals" },
+    { title: "Malnax", subtitle: "Malnax initiatives" },
+    { title: "Real Estate", subtitle: "Property and real estate holdings" },
+  ];
+
   return (
     <div style={{ padding: "2rem 1rem", fontFamily: "var(--font-sans)" }}>
       {/* Header section */}
@@ -154,6 +161,29 @@ export default function LandingView({ roadmaps, onSelectRoadmap }) {
           <p style={{ fontSize: "14px", margin: "0 0 12px" }}>No roadmaps yet</p>
         </div>
       )}
+
+      {/* Placeholder category sections */}
+      {placeholderSections.map((section) => (
+        <div key={section.title} style={{ marginTop: "2.5rem" }}>
+          <div style={{ marginBottom: "1rem" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 500, margin: 0, color: "var(--color-text-primary)" }}>
+              {section.title}
+            </h2>
+            <p style={{ fontSize: "13px", color: "var(--color-text-secondary)", margin: "4px 0 0" }}>
+              {section.subtitle}
+            </p>
+          </div>
+          <div style={{
+            border: "1px dashed var(--color-border-tertiary)",
+            borderRadius: "var(--border-radius-lg)",
+            padding: "2.5rem 1rem",
+            textAlign: "center",
+            color: "var(--color-text-tertiary)",
+          }}>
+            <p style={{ fontSize: "13px", margin: 0 }}>Coming soon</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
