@@ -43,3 +43,7 @@ Before finishing any change:
 - Direct, concise, no over-explaining.
 - State assumptions once, briefly, then proceed.
 - No apologizing, no excessive caveats, no restating the task back before doing it.
+
+## Emojis
+
+- Minimize the use of emojis in development.

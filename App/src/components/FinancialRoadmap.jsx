@@ -234,7 +234,7 @@ export default function FinancialRoadmap() {
 
   // Other Assets (e.g. car value) — loaded from Upstash on mount
   const [otherAssets, setOtherAssets] = useState([
-    { id: "oa-corolla", category: "vehicles", type: "Car Value", name: "2010 Toyota Corolla S", value: 7500, image: "/Corolla.png" },
+    { id: "oa-corolla", category: "vehicles", type: "Car Value", name: "2010 Toyota Corolla S", value: 7500 },
   ]);
   const [otherAssetDraft, setOtherAssetDraft] = useState({ category: "vehicles", name: "", value: "" });
 
@@ -273,9 +273,7 @@ export default function FinancialRoadmap() {
             if (data.earningsData) setEarningsData(data.earningsData);
             if (data.futureNotes) setFutureNotes(data.futureNotes);
             if (data.earnedItems) setEarnedItems(migrateEarnedItems(data.earnedItems));
-            if (data.otherAssets) setOtherAssets(data.otherAssets.map(a =>
-              a.id === "oa-corolla" && !a.image ? { ...a, image: "/Corolla.png" } : a
-            ));
+            if (data.otherAssets) setOtherAssets(data.otherAssets);
             if (data.completedArchive) setCompletedArchive(data.completedArchive);
           }
         }
@@ -1351,7 +1349,7 @@ export default function FinancialRoadmap() {
         </div>
 
         {/* ═══ Other Assets ═══ */}
-        <div style={{ marginTop: "40px", paddingTop: "32px", borderTop: "1px solid #1e293b" }}>
+        <div style={{ marginTop: "40px", paddingTop: "32px", borderTop: "1px solid #1e293b", width: "calc(100% - 308px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <div>
               <h4 style={{ fontSize: "22px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>Other Assets</h4>
@@ -1362,16 +1360,11 @@ export default function FinancialRoadmap() {
             {otherAssets.map(asset => {
               const cat = getAssetCat(asset);
               return (
-              <div key={asset.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "16px 24px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: "20px", alignItems: "center" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", overflow: "hidden", flexShrink: 0 }}>
-                  {asset.image ? (
-                    <img src={asset.image} alt={asset.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : cat.icon}
-                </div>
+              <div key={asset.id} style={{ background: "#1e293b", borderRadius: "8px", padding: "16px 24px", border: "1px solid #334155", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "20px", alignItems: "center" }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9" }}>{asset.name}</span>
-                    <span style={{ fontSize: "12px", padding: "3px 8px", borderRadius: "4px", fontWeight: 500, background: `${cat.color}22`, color: cat.color }}>{cat.tag}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "20px", fontWeight: 600, color: "#f1f5f9" }}>{asset.name}</span>
+                    <span style={{ fontSize: "14px", padding: "3px 10px", borderRadius: "4px", fontWeight: 500, background: `${cat.color}22`, color: cat.color }}>{cat.tag}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
