@@ -45,11 +45,13 @@ import NavigationBar from './NavigationBar.jsx';
 import LandingView from './LandingView.jsx';
 import FinancialRoadmap from './FinancialRoadmap.jsx';
 import EngineeringRoadmap from './EngineeringRoadmap.jsx';
+import CareerBoard from './CareerBoard.jsx';
 
 // Map roadmap IDs to their standalone components.
 const ROADMAP_COMPONENTS = {
   'nick-2yr-engineering': EngineeringRoadmap,
   'financial-masterplan': FinancialRoadmap,
+  'career-board': CareerBoard,
 };
 
 /**
