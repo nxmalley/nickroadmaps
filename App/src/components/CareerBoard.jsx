@@ -193,7 +193,14 @@ export default function CareerBoard() {
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                      <button onClick={() => setEditingJobId(isEditing ? null : job.id)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer" }}>✏️ Edit</button>
+                      <button onClick={() => {
+                        if (isEditing) {
+                          setEditingJobId(null);
+                        } else {
+                          setEditingJobId(job.id);
+                          setExpandedJobId(job.id); // ensure the edit form is visible
+                        }
+                      }} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: isEditing ? "#1e3a5f" : "#0f172a", color: isEditing ? "#93c5fd" : "#cbd5e1", cursor: "pointer" }}>✏️ {isEditing ? "Editing" : "Edit"}</button>
                       <button onClick={() => setExpandedJobId(isExpanded ? null : job.id)} style={{ padding: "6px 10px", fontSize: "14px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }} title={isExpanded ? "Collapse" : "Expand"}>{isExpanded ? "⌃" : "⌄"}</button>
                     </div>
                   </div>
