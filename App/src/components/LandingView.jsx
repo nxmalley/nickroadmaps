@@ -53,6 +53,9 @@ export default function LandingView({ roadmaps, onSelectRoadmap }) {
       }}>
         {roadmaps.map((roadmap) => {
           const pct = getProgress(roadmap.completedTasks, roadmap.totalTasks);
+          // Career Board is a free-form board with no tasks/timeline, so it
+          // omits the date range and completion progress that other cards show.
+          const showProgress = roadmap.id !== "career-board";
           return (
             <div
               key={roadmap.id}
@@ -105,40 +108,44 @@ export default function LandingView({ roadmaps, onSelectRoadmap }) {
                 </p>
               )}
 
-              {/* Date range */}
-              <p style={{
-                fontSize: "12px",
-                color: "var(--color-text-secondary)",
-                margin: roadmap.subtitle ? "0 0 12px" : "0 0 12px",
-              }}>
-                {formatDateRange(roadmap.dateRange.start, roadmap.dateRange.end)}
-              </p>
+              {showProgress && (
+                <>
+                  {/* Date range */}
+                  <p style={{
+                    fontSize: "12px",
+                    color: "var(--color-text-secondary)",
+                    margin: roadmap.subtitle ? "0 0 12px" : "0 0 12px",
+                  }}>
+                    {formatDateRange(roadmap.dateRange.start, roadmap.dateRange.end)}
+                  </p>
 
-              {/* Progress bar */}
-              <div style={{
-                height: "4px",
-                background: "var(--color-border-tertiary)",
-                borderRadius: "2px",
-                overflow: "hidden",
-                marginBottom: "8px",
-              }}>
-                <div style={{
-                  width: `${pct}%`,
-                  height: "100%",
-                  background: "var(--color-background-info)",
-                  borderRadius: "2px",
-                  transition: "width 0.3s",
-                }} />
-              </div>
+                  {/* Progress bar */}
+                  <div style={{
+                    height: "4px",
+                    background: "var(--color-border-tertiary)",
+                    borderRadius: "2px",
+                    overflow: "hidden",
+                    marginBottom: "8px",
+                  }}>
+                    <div style={{
+                      width: `${pct}%`,
+                      height: "100%",
+                      background: "var(--color-background-info)",
+                      borderRadius: "2px",
+                      transition: "width 0.3s",
+                    }} />
+                  </div>
 
-              {/* Progress text */}
-              <p style={{
-                fontSize: "12px",
-                color: "var(--color-text-secondary)",
-                margin: 0,
-              }}>
-                {roadmap.completedTasks}/{roadmap.totalTasks} · {pct}%
-              </p>
+                  {/* Progress text */}
+                  <p style={{
+                    fontSize: "12px",
+                    color: "var(--color-text-secondary)",
+                    margin: 0,
+                  }}>
+                    {roadmap.completedTasks}/{roadmap.totalTasks} · {pct}%
+                  </p>
+                </>
+              )}
             </div>
           );
         })}
