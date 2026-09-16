@@ -111,12 +111,10 @@ export default function CareerBoard() {
   }
 
   const navItems = [
-    { key: "dashboard", label: "Dashboard", icon: "🏠" },
-    { key: "career", label: "Career Board", icon: "💼" },
-    { key: "resume", label: "Resume Builder", icon: "📄" },
-    { key: "certifications", label: "Certifications", icon: "🎓" },
-    { key: "goals", label: "Goals", icon: "🎯" },
-    { key: "settings", label: "Settings", icon: "⚙️" },
+    { key: "dashboard", label: "Dashboard"},
+    { key: "career", label: "Career Board"},
+    { key: "certifications", label: "Certifications"},
+    { key: "goals", label: "Goals"},
   ];
 
   return (

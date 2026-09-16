@@ -138,16 +138,18 @@ function RoadmapSelector({ roadmaps, activeId, onSelect }) {
                 >
                   {r.title}
                 </span>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    color: "var(--color-text-tertiary)",
-                    flexShrink: 0,
-                    marginLeft: "12px",
-                  }}
-                >
-                  {pct}%
-                </span>
+                {r.id !== "career-board" && (
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--color-text-tertiary)",
+                      flexShrink: 0,
+                      marginLeft: "12px",
+                    }}
+                  >
+                    {pct}%
+                  </span>
+                )}
               </li>
             );
           })}
