@@ -5,42 +5,42 @@ const INITIAL_JOBS = [
   {
     id: "job-leidos",
     company: "Leidos",
-    title: "IT Support",
-    department: "NMCI – Navy Support",
-    startDate: "Aug 2024",
-    endDate: "Present",
+    title: "IT Analyst",
+    department: "",
+    startDate: "Mar 2025",
+    endDate: "Apr 2026",
     current: true,
-    location: "Chantilly, VA",
-    salary: "$54,000 (approx.)",
+    location: "Norfolk, VA",
+    salary: "",
     responsibilities: [
-      "Resolved ~75 support tickets per week (100+ calls per week) for end users across NMCI.",
-      "Managed Active Directory (accounts, computers, groups) and user access.",
-      "Used FlankSpeed for remote support and endpoint management.",
-      "Worked with NMCI systems and infrastructure supporting Navy operations.",
-      "Utilized Tanium for endpoint management and patching.",
-      "Handled CAC/PIV/PKI issues and certificate management.",
-      "Supported Windows 10/Server environments (troubleshooting, imaging, account management).",
-      "Monitored and investigated security events using Splunk and Tenable.",
-      "Worked with Cisco networking equipment and resolved connectivity issues.",
+      "Managed enterprise-scale NMCI systems supporting secure network, endpoint, and identity operations on NNPI and SIPR designated systems.",
+      "Managed LDAP-based Active Directory & FlankSpeed environments — provisioning user & computer accounts, managing group memberships, and troubleshooting Group Policy application issues.",
     ],
     notes: "",
   },
   {
-    id: "job-prev",
-    company: "Previous Company",
-    title: "Previous Job Title",
-    department: "Department",
-    startDate: "Jun 2022",
-    endDate: "Aug 2024",
+    id: "job-tower",
+    company: "Tower Federal Credit Union",
+    title: "Cybersecurity Analyst Intern",
+    department: "",
+    startDate: "Jun 2023",
+    endDate: "Aug 2023",
     current: false,
-    location: "Norfolk, VA",
-    salary: "$48,000 (approx.)",
-    responsibilities: [],
+    location: "Laurel, MD",
+    salary: "",
+    responsibilities: [
+      "Authored an API Security Standard to govern the secure transition to Microsoft Azure.",
+      "Designed four operational playbooks using Tines (SOAR), successfully automating two core services and backup processes to increase productivity.",
+      "Developed and presented a comprehensive Incident Response Summary to the CEO and Board of Directors following a third-party vendor compromise.",
+    ],
     notes: "",
   },
 ];
 
 const EMPTY_DRAFT = { company: "", title: "", department: "", startDate: "", endDate: "", location: "", salary: "", notes: "" };
+
+// Bump when the seed data changes to force a one-time refresh of persisted jobs.
+const SEED_VERSION = 2;
 
 export default function CareerBoard() {
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -59,7 +59,11 @@ export default function CareerBoard() {
         const res = await fetch("/api/career-board-data");
         if (res.ok) {
           const data = await res.json();
-          if (data && !cancelled && Array.isArray(data.jobs)) setJobs(data.jobs);
+          // Only use stored jobs if they were saved against the current seed
+          // version; otherwise keep the fresh seed (one-time refresh).
+          if (data && !cancelled && Array.isArray(data.jobs) && data.seedVersion === SEED_VERSION) {
+            setJobs(data.jobs);
+          }
         }
       } catch { /* local-only fallback */ }
       if (!cancelled) setDataLoaded(true);
@@ -73,7 +77,7 @@ export default function CareerBoard() {
     fetch("/api/career-board-data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobs }),
+      body: JSON.stringify({ jobs, seedVersion: SEED_VERSION }),
     }).catch(() => { /* silent */ });
   }, [dataLoaded, jobs]);
 
@@ -274,9 +278,9 @@ export default function CareerBoard() {
             <p style={{ fontSize: "14px", fontWeight: 600, color: "#f8fafc", margin: "0 0 16px" }}>Career Overview</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <OverviewStat icon="💼" value={String(totalPositions)} label="Total Positions" />
-              <OverviewStat icon="📅" value="3+" label="Years of Experience" />
-              <OverviewStat icon="☑️" value={`${totalResponsibilities}+`} label="Key Responsibilities Tracked" />
-              <OverviewStat icon="⭐" value="10+" label="Achievements / Projects" />
+              <OverviewStat icon="📅" value="2+" label="Years of Experience" />
+              <OverviewStat icon="☑️" value={String(totalResponsibilities)} label="Key Responsibilities Tracked" />
+              <OverviewStat icon="⭐" value="3" label="Projects" />
             </div>
           </div>
 
