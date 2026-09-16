@@ -255,7 +255,6 @@ export default function CareerBoard() {
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                             <EditField label="Company" value={job.company} onChange={v => updateJob(job.id, { company: v })} />
                             <EditField label="Job Title" value={job.title} onChange={v => updateJob(job.id, { title: v })} />
-                            <EditField label="Department" value={job.department} onChange={v => updateJob(job.id, { department: v })} />
                             <EditField label="Location" value={job.location} onChange={v => updateJob(job.id, { location: v })} />
                             <EditField label="Start Date" value={job.startDate} onChange={v => updateJob(job.id, { startDate: v })} />
                             <EditField label="End Date" value={job.endDate} onChange={v => updateJob(job.id, { endDate: v, current: v.trim().toLowerCase() === "present" || !v.trim() })} />
