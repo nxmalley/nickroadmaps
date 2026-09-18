@@ -1,55 +1,78 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-/* ─── Seed data (used on first load, before anything is persisted) ─── */
-const INITIAL_JOBS = [
-  {
-    id: "job-leidos",
-    company: "Leidos",
-    title: "IT Analyst",
-    department: "",
-    startDate: "Mar 2025",
-    endDate: "Apr 2026",
-    current: true,
-    location: "Norfolk, VA",
-    salary: "",
-    responsibilities: [
-      "Managed enterprise-scale NMCI systems supporting secure network, endpoint, and identity operations on NNPI and SIPR designated systems.",
-      "Managed LDAP-based Active Directory & FlankSpeed environments — provisioning user & computer accounts, managing group memberships, and troubleshooting Group Policy application issues.",
-    ],
-    notes: "",
-  },
-  {
-    id: "job-tower",
-    company: "Tower Federal Credit Union",
-    title: "Cybersecurity Analyst Intern",
-    department: "",
-    startDate: "Jun 2023",
-    endDate: "Aug 2023",
-    current: false,
-    location: "Laurel, MD",
-    salary: "",
-    responsibilities: [
-      "Authored an API Security Standard to govern the secure transition to Microsoft Azure.",
-      "Designed four operational playbooks using Tines (SOAR), successfully automating two core services and backup processes to increase productivity.",
-      "Developed and presented a comprehensive Incident Response Summary to the CEO and Board of Directors following a third-party vendor compromise.",
-    ],
-    notes: "",
-  },
-];
+/* ─── Start with an empty board; entries are created by the user. ─── */
+const INITIAL_ENTRIES = [];
 
-const EMPTY_DRAFT = { company: "", title: "", department: "", startDate: "", endDate: "", location: "", salary: "", notes: "" };
+// Bump when the seed data changes to force a one-time refresh of persisted entries.
+const SEED_VERSION = 4;
 
-// Bump when the seed data changes to force a one-time refresh of persisted jobs.
-const SEED_VERSION = 2;
+const ALL_TAGS = ["Personal", "Career", "Growth", "Work", "Finance"];
+
+const newEntryTemplate = () => ({
+  id: `entry-${Date.now()}`,
+  date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+  title: "Untitled Entry",
+  tags: [],
+  body: "",
+});
+
+/**
+ * Render a journal body: lines ending in ":" become section headers,
+ * lines starting with "- " become bullets, blank lines are spacing.
+ */
+function renderBody(body) {
+  const lines = body.split("\n");
+  const out = [];
+  let bulletBuffer = [];
+
+  const flushBullets = (key) => {
+    if (bulletBuffer.length === 0) return;
+    out.push(
+      <ul key={`ul-${key}`} style={{ margin: "0 0 14px", paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        {bulletBuffer.map((b, i) => (
+          <li key={i} style={{ fontSize: "14px", color: "#cbd5e1", lineHeight: 1.6 }}>{b}</li>
+        ))}
+      </ul>
+    );
+    bulletBuffer = [];
+  };
+
+  lines.forEach((raw, idx) => {
+    const line = raw.trim();
+    if (line.startsWith("- ")) {
+      bulletBuffer.push(line.slice(2));
+      return;
+    }
+    flushBullets(idx);
+    if (line === "") {
+      return;
+    }
+    if (line.endsWith(":")) {
+      out.push(
+        <p key={idx} style={{ fontSize: "15px", fontWeight: 600, color: "#e2e8f0", margin: "8px 0 10px" }}>
+          {line.slice(0, -1)}
+        </p>
+      );
+    } else {
+      out.push(
+        <p key={idx} style={{ fontSize: "14px", color: "#cbd5e1", lineHeight: 1.6, margin: "0 0 14px" }}>
+          {line}
+        </p>
+      );
+    }
+  });
+  flushBullets("end");
+  return out;
+}
 
 export default function CareerBoard() {
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [jobs, setJobs] = useState(INITIAL_JOBS);
-  const [activeSection, setActiveSection] = useState("career");
-  const [expandedJobId, setExpandedJobId] = useState("job-leidos");
-  const [jobTab, setJobTab] = useState({}); // { [jobId]: "responsibilities" | "notes" }
-  const [editingJobId, setEditingJobId] = useState(null);
-  const [draft, setDraft] = useState(EMPTY_DRAFT);
+  const [entries, setEntries] = useState(INITIAL_ENTRIES);
+  const [activeSection, setActiveSection] = useState("journal");
+  const [selectedId, setSelectedId] = useState(INITIAL_ENTRIES[0]?.id || null);
+  const [search, setSearch] = useState("");
+  const [tagFilter, setTagFilter] = useState("All");
+  const [editing, setEditing] = useState(false);
 
   // Load persisted data on mount
   useEffect(() => {
@@ -59,10 +82,9 @@ export default function CareerBoard() {
         const res = await fetch("/api/career-board-data");
         if (res.ok) {
           const data = await res.json();
-          // Only use stored jobs if they were saved against the current seed
-          // version; otherwise keep the fresh seed (one-time refresh).
-          if (data && !cancelled && Array.isArray(data.jobs) && data.seedVersion === SEED_VERSION) {
-            setJobs(data.jobs);
+          if (data && !cancelled && Array.isArray(data.entries) && data.seedVersion === SEED_VERSION) {
+            setEntries(data.entries);
+            setSelectedId(data.entries[0]?.id || null);
           }
         }
       } catch { /* local-only fallback */ }
@@ -71,294 +93,252 @@ export default function CareerBoard() {
     return () => { cancelled = true; };
   }, []);
 
-  // Persist whenever jobs change (after initial load)
+  // Persist whenever entries change (after initial load)
   useEffect(() => {
     if (!dataLoaded) return;
     fetch("/api/career-board-data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobs, seedVersion: SEED_VERSION }),
+      body: JSON.stringify({ entries, seedVersion: SEED_VERSION }),
     }).catch(() => { /* silent */ });
-  }, [dataLoaded, jobs]);
+  }, [dataLoaded, entries]);
 
-  // Derived overview stats
-  const totalPositions = jobs.length;
-  const totalResponsibilities = jobs.reduce((s, j) => s + (j.responsibilities?.length || 0), 0);
+  const filteredEntries = useMemo(() => {
+    return entries.filter(e => {
+      const matchesTag = tagFilter === "All" || (e.tags || []).includes(tagFilter);
+      const q = search.trim().toLowerCase();
+      const matchesSearch = !q || e.title.toLowerCase().includes(q) || e.body.toLowerCase().includes(q);
+      return matchesTag && matchesSearch;
+    });
+  }, [entries, tagFilter, search]);
 
-  function addJob() {
-    if (!draft.company.trim() || !draft.title.trim()) return;
-    const isCurrent = !draft.endDate.trim();
-    const newJob = {
-      id: `job-${Date.now()}`,
-      company: draft.company.trim(),
-      title: draft.title.trim(),
-      department: draft.department.trim(),
-      startDate: draft.startDate.trim(),
-      endDate: draft.endDate.trim() || "Present",
-      current: isCurrent,
-      location: draft.location.trim(),
-      salary: draft.salary.trim(),
-      responsibilities: [],
-      notes: draft.notes.trim(),
-    };
-    setJobs(prev => [newJob, ...prev]);
-    setDraft(EMPTY_DRAFT);
-    setExpandedJobId(newJob.id);
+  const selected = entries.find(e => e.id === selectedId) || null;
+
+  function addEntry() {
+    const entry = newEntryTemplate();
+    setEntries(prev => [entry, ...prev]);
+    setSelectedId(entry.id);
+    setEditing(true);
   }
 
-  function removeJob(id) {
-    setJobs(prev => prev.filter(j => j.id !== id));
+  function updateEntry(id, patch) {
+    setEntries(prev => prev.map(e => e.id === id ? { ...e, ...patch } : e));
   }
 
-  function updateJob(id, patch) {
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, ...patch } : j));
+  function removeEntry(id) {
+    setEntries(prev => {
+      const next = prev.filter(e => e.id !== id);
+      if (id === selectedId) setSelectedId(next[0]?.id || null);
+      return next;
+    });
+    setEditing(false);
+  }
+
+  function toggleTag(id, tag) {
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+    const has = (entry.tags || []).includes(tag);
+    updateEntry(id, { tags: has ? entry.tags.filter(t => t !== tag) : [...(entry.tags || []), tag] });
   }
 
   const navItems = [
-    { key: "dashboard", label: "Dashboard"},
-    { key: "career", label: "Career Board"},
-    { key: "certifications", label: "Certifications"},
-    { key: "goals", label: "Goals"},
+    { key: "dashboard", label: "Dashboard", icon: "🏠" },
+    { key: "journal", label: "Career Journal", icon: "📓" },
+    { key: "certifications", label: "Certifications", icon: "🎓" },
+    { key: "goals", label: "Goals", icon: "🎯" },
+    { key: "settings", label: "Settings", icon: "⚙️" },
   ];
 
   return (
-    <div style={{ display: "flex", height: "100%", minHeight: 0, fontFamily: "var(--font-sans)", background: "#0b1220", color: "#e2e8f0" }}>
-      {/* ═══ Left Sidebar ═══ */}
-      <aside style={{ width: "220px", flexShrink: 0, background: "#0b1220", borderRight: "1px solid #1e293b", display: "flex", flexDirection: "column", padding: "20px 0", height: "100%", overflowY: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 20px 20px", borderBottom: "1px solid #1e293b" }}>
-          <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>💼</div>
-          <div>
-            <p style={{ fontSize: "15px", fontWeight: 700, color: "#f8fafc", margin: 0 }}>CareerBoard</p>
-            <p style={{ fontSize: "10px", color: "#64748b", margin: 0 }}>Track. Build. Advance.</p>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, fontFamily: "var(--font-sans)", background: "#0a1120", color: "#e2e8f0" }}>
+      {/* ═══ Top bar ═══ */}
+      <header style={{ display: "flex", alignItems: "center", gap: "20px", padding: "12px 24px", borderBottom: "1px solid #1e293b", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "200px", flexShrink: 0 }}>
+          <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>📓</div>
+          <span style={{ fontSize: "16px", fontWeight: 700, color: "#f8fafc" }}>Career Journal</span>
+        </div>
+        <div style={{ flex: 1, maxWidth: "560px", margin: "0 auto" }}>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search your journal…"
+            style={{ width: "100%", padding: "9px 14px", fontSize: "13px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+          />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", flexShrink: 0 }}>
+          <span style={{ fontSize: "16px", color: "#64748b" }}>🔔</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 600 }}>NM</div>
+            <span style={{ fontSize: "13px", color: "#cbd5e1" }}>Nicholas M.</span>
           </div>
         </div>
-        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", padding: "16px 12px" }}>
-          {navItems.map(item => {
-            const isActive = activeSection === item.key;
-            return (
-              <button key={item.key} onClick={() => setActiveSection(item.key)} style={{
-                display: "flex", alignItems: "center", gap: "12px",
-                padding: "10px 12px", borderRadius: "8px", border: "none",
-                background: isActive ? "#1e293b" : "transparent",
-                color: isActive ? "#60a5fa" : "#94a3b8",
-                fontSize: "14px", fontWeight: isActive ? 600 : 400,
-                cursor: "pointer", textAlign: "left", width: "100%",
-              }}>
-                <span style={{ fontSize: "15px" }}>{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-        <div style={{ padding: "0 20px", marginTop: "auto" }}>
-          <p style={{ fontSize: "11px", fontStyle: "italic", color: "#475569", margin: 0, lineHeight: 1.5 }}>
-            &ldquo;The best time to plant a tree was 20 years ago. The second best time is now.&rdquo;
-          </p>
-        </div>
-      </aside>
+      </header>
 
-      {/* ═══ Main + Right column ═══ */}
-      <div style={{ flex: 1, display: "flex", minWidth: 0, height: "100%", overflowY: "auto" }}>
-        {/* Main content */}
-        <main style={{ flex: 1, padding: "28px 32px", minWidth: 0 }}>
-          <h2 style={{ fontSize: "26px", fontWeight: 700, color: "#f8fafc", margin: "0 0 6px" }}>Career Board</h2>
-          <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 24px", maxWidth: "560px", lineHeight: 1.5 }}>
-            Keep track of your work history, key responsibilities, and achievements. This will help you build a strong, detailed resume when you&apos;re ready.
-          </p>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {jobs.map(job => {
-              const isExpanded = expandedJobId === job.id;
-              const tab = jobTab[job.id] || "responsibilities";
-              const isEditing = editingJobId === job.id;
+      {/* ═══ Body: sidebar + list + reader ═══ */}
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        {/* Left sidebar */}
+        <aside style={{ width: "200px", flexShrink: 0, borderRight: "1px solid #1e293b", display: "flex", flexDirection: "column", padding: "16px 0", overflowY: "auto" }}>
+          <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", padding: "0 12px" }}>
+            {navItems.map(item => {
+              const isActive = activeSection === item.key;
               return (
-                <div key={job.id} style={{ background: "#111c30", borderRadius: "12px", border: "1px solid #1e293b" }}>
-                  {/* Job header */}
-                  <div style={{ padding: "18px 20px", display: "flex", alignItems: "flex-start", gap: "14px" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "#1e293b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏢</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#f8fafc" }}>{job.company}</span>
-                        {job.current && (
-                          <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "12px", background: "#065f4633", color: "#34d399" }}>Current</span>
-                        )}
-                      </div>
-                      <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 8px" }}>
-                        {job.title}{job.department ? `  |  ${job.department}` : ""}
-                      </p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "12px", color: "#64748b" }}>
-                        <span>📅 {job.startDate} – {job.endDate}</span>
-                        {job.location && <span>📍 {job.location}</span>}
-                        {job.salary && <span>💵 {job.salary}</span>}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                      <button onClick={() => {
-                        if (isEditing) {
-                          setEditingJobId(null);
-                        } else {
-                          setEditingJobId(job.id);
-                          setExpandedJobId(job.id); // ensure the edit form is visible
-                        }
-                      }} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: isEditing ? "#1e3a5f" : "#0f172a", color: isEditing ? "#93c5fd" : "#cbd5e1", cursor: "pointer" }}>✏️ {isEditing ? "Editing" : "Edit"}</button>
-                      <button onClick={() => setExpandedJobId(isExpanded ? null : job.id)} style={{ padding: "6px 10px", fontSize: "14px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }} title={isExpanded ? "Collapse" : "Expand"}>{isExpanded ? "⌃" : "⌄"}</button>
-                    </div>
+                <button key={item.key} onClick={() => setActiveSection(item.key)} style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  padding: "10px 12px", borderRadius: "8px", border: "none",
+                  background: isActive ? "#1e293b" : "transparent",
+                  color: isActive ? "#60a5fa" : "#94a3b8",
+                  fontSize: "14px", fontWeight: isActive ? 600 : 400,
+                  cursor: "pointer", textAlign: "left", width: "100%",
+                }}>
+                  <span style={{ fontSize: "15px" }}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+          <div style={{ padding: "16px 20px 0" }}>
+            <p style={{ fontSize: "11px", fontStyle: "italic", color: "#475569", margin: 0, lineHeight: 1.5 }}>
+              &ldquo;Progress isn&apos;t about being perfect. It&apos;s about being better than yesterday.&rdquo;
+            </p>
+          </div>
+        </aside>
+
+        {/* Middle: entry list */}
+        <section style={{ width: "380px", flexShrink: 0, borderRight: "1px solid #1e293b", display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <div style={{ padding: "24px 24px 16px", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+              <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#f8fafc", margin: 0 }}>Career Journal</h2>
+              <button onClick={addEntry} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 500, borderRadius: "8px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>+ New Entry</button>
+            </div>
+            <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 16px", lineHeight: 1.5 }}>
+              Capture your thoughts, wins, challenges, and ideas. This is your space to reflect, plan, and track your journey.
+            </p>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search entries…"
+                style={{ flex: 1, padding: "8px 12px", fontSize: "13px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+              />
+              <select
+                value={tagFilter}
+                onChange={e => setTagFilter(e.target.value)}
+                style={{ padding: "8px 10px", fontSize: "13px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", cursor: "pointer" }}
+              >
+                <option value="All">All</option>
+                {ALL_TAGS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            {filteredEntries.map(entry => {
+              const isSelected = entry.id === selectedId;
+              const preview = entry.body.replace(/\n/g, " ").slice(0, 80);
+              return (
+                <div
+                  key={entry.id}
+                  onClick={() => { setSelectedId(entry.id); setEditing(false); }}
+                  style={{
+                    padding: "14px 16px", borderRadius: "10px", cursor: "pointer",
+                    background: isSelected ? "#12233f" : "#0f1a2e",
+                    border: isSelected ? "1px solid #2563eb" : "1px solid #1e293b",
+                    transition: "background 0.12s, border-color 0.12s",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: "11px", color: "#64748b" }}>{entry.date}</span>
+                    <span style={{ fontSize: "14px", color: "#475569" }}>⋯</span>
                   </div>
-
-                  {isExpanded && (
-                    <div style={{ padding: "0 20px 20px" }}>
-                      {/* Tabs */}
-                      <div style={{ display: "flex", gap: "20px", borderBottom: "1px solid #1e293b", marginBottom: "16px" }}>
-                        {["responsibilities", "notes"].map(t => (
-                          <button key={t} onClick={() => setJobTab(prev => ({ ...prev, [job.id]: t }))} style={{
-                            background: "none", border: "none", cursor: "pointer",
-                            padding: "8px 0", fontSize: "13px", fontWeight: 500,
-                            color: tab === t ? "#60a5fa" : "#94a3b8",
-                            borderBottom: tab === t ? "2px solid #60a5fa" : "2px solid transparent",
-                          }}>{t === "responsibilities" ? "Responsibilities & Achievements" : "Notes"}</button>
-                        ))}
-                      </div>
-
-                      {tab === "responsibilities" ? (
-                        <div>
-                          <p style={{ fontSize: "13px", fontWeight: 600, color: "#e2e8f0", margin: "0 0 12px" }}>Key Responsibilities &amp; What I&apos;ve Done</p>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                            {job.responsibilities.map((r, i) => (
-                              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                                <span style={{ color: "#3b82f6", fontSize: "14px", flexShrink: 0, marginTop: "1px" }}>✔</span>
-                                <span style={{ fontSize: "13px", color: "#cbd5e1", lineHeight: 1.5, flex: 1 }}>{r}</span>
-                                {isEditing && (
-                                  <button onClick={() => updateJob(job.id, { responsibilities: job.responsibilities.filter((_, idx) => idx !== i) })} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "13px" }}>✕</button>
-                                )}
-                              </div>
-                            ))}
-                            {job.responsibilities.length === 0 && (
-                              <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>No responsibilities added yet.</p>
-                            )}
-                          </div>
-                          {isEditing && (
-                            <AddResponsibility onAdd={(text) => updateJob(job.id, { responsibilities: [...job.responsibilities, text] })} />
-                          )}
-                        </div>
-                      ) : (
-                        <textarea
-                          value={job.notes}
-                          onChange={e => updateJob(job.id, { notes: e.target.value })}
-                          placeholder="Add any additional notes about this role…"
-                          style={{ width: "100%", minHeight: "100px", padding: "12px", fontSize: "13px", border: "1px solid #334155", borderRadius: "8px", background: "#0f172a", color: "#e2e8f0", resize: "vertical", boxSizing: "border-box" }}
-                        />
-                      )}
-
-                      {isEditing && (
-                        <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #1e293b" }}>
-                          <p style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", margin: "0 0 10px" }}>Edit Job Details</p>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                            <EditField label="Company" value={job.company} onChange={v => updateJob(job.id, { company: v })} />
-                            <EditField label="Job Title" value={job.title} onChange={v => updateJob(job.id, { title: v })} />
-                            <EditField label="Location" value={job.location} onChange={v => updateJob(job.id, { location: v })} />
-                            <EditField label="Start Date" value={job.startDate} onChange={v => updateJob(job.id, { startDate: v })} />
-                            <EditField label="End Date" value={job.endDate} onChange={v => updateJob(job.id, { endDate: v, current: v.trim().toLowerCase() === "present" || !v.trim() })} />
-                            <EditField label="Salary" value={job.salary} onChange={v => updateJob(job.id, { salary: v })} />
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "14px" }}>
-                            <button onClick={() => removeJob(job.id)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #7f1d1d", background: "transparent", color: "#f87171", cursor: "pointer" }}>Delete Job</button>
-                            <button onClick={() => setEditingJobId(null)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer" }}>Done</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <p style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: "4px 0 4px" }}>{entry.title}</p>
+                  <p style={{ fontSize: "12px", color: "#94a3b8", margin: 0, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                    {preview}{entry.body.length > 80 ? "…" : ""}
+                  </p>
                 </div>
               );
             })}
-            {jobs.length === 0 && (
-              <p style={{ fontSize: "13px", color: "#64748b" }}>No jobs added yet. Use the form on the right to add one.</p>
+            {filteredEntries.length === 0 && (
+              <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "24px" }}>
+                {entries.length === 0 ? "No entries yet. Click “New Entry” to begin." : "No entries match your search."}
+              </p>
             )}
           </div>
+        </section>
+
+        {/* Right: reader / editor */}
+        <main style={{ flex: 1, minWidth: 0, overflowY: "auto", padding: "28px 40px" }}>
+          {!selected ? (
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+              <p style={{ fontSize: "15px", color: "#94a3b8", margin: 0 }}>Your journal is empty.</p>
+              <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Start capturing your thoughts, wins, and ideas.</p>
+              <button onClick={addEntry} style={{ marginTop: "6px", padding: "9px 18px", fontSize: "13px", fontWeight: 500, borderRadius: "8px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer" }}>+ New Entry</button>
+            </div>
+          ) : editing ? (
+            /* ── Editor ── */
+            <div style={{ maxWidth: "720px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <input
+                  value={selected.date}
+                  onChange={e => updateEntry(selected.id, { date: e.target.value })}
+                  style={{ fontSize: "13px", color: "#94a3b8", background: "#111c30", border: "1px solid #1e293b", borderRadius: "6px", padding: "6px 10px", width: "160px" }}
+                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button onClick={() => removeEntry(selected.id)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #7f1d1d", background: "transparent", color: "#f87171", cursor: "pointer" }}>Delete</button>
+                  <button onClick={() => setEditing(false)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer" }}>Done</button>
+                </div>
+              </div>
+              <input
+                value={selected.title}
+                onChange={e => updateEntry(selected.id, { title: e.target.value })}
+                placeholder="Entry title"
+                style={{ width: "100%", fontSize: "24px", fontWeight: 700, color: "#f8fafc", background: "transparent", border: "none", borderBottom: "1px solid #1e293b", padding: "0 0 8px", marginBottom: "16px", boxSizing: "border-box", outline: "none" }}
+              />
+              <textarea
+                value={selected.body}
+                onChange={e => updateEntry(selected.id, { body: e.target.value })}
+                placeholder={"Write your entry…\n\nTip: end a line with ':' for a section header, and start a line with '- ' for a bullet."}
+                style={{ width: "100%", minHeight: "340px", fontSize: "14px", lineHeight: 1.6, color: "#cbd5e1", background: "#0f1a2e", border: "1px solid #1e293b", borderRadius: "10px", padding: "16px", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }}
+              />
+              <div style={{ marginTop: "16px" }}>
+                <p style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", margin: "0 0 10px" }}>Tags</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {ALL_TAGS.map(tag => {
+                    const active = (selected.tags || []).includes(tag);
+                    return (
+                      <button key={tag} onClick={() => toggleTag(selected.id, tag)} style={{
+                        padding: "5px 12px", fontSize: "12px", borderRadius: "14px", cursor: "pointer",
+                        border: active ? "1px solid #2563eb" : "1px solid #334155",
+                        background: active ? "#1e3a5f" : "transparent",
+                        color: active ? "#93c5fd" : "#94a3b8",
+                      }}>{tag}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ── Reader ── */
+            <div style={{ maxWidth: "720px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+                <span style={{ fontSize: "13px", color: "#94a3b8" }}>{selected.date}</span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button onClick={() => setEditing(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer" }}>✏️ Edit</button>
+                  <button onClick={() => removeEntry(selected.id)} title="Delete entry" style={{ padding: "7px 12px", fontSize: "13px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }}>⋮</button>
+                </div>
+              </div>
+              <h1 style={{ fontSize: "26px", fontWeight: 700, color: "#f8fafc", margin: "0 0 20px" }}>{selected.title}</h1>
+              <div>{renderBody(selected.body)}</div>
+              {(selected.tags || []).length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "24px" }}>
+                  {selected.tags.map(tag => (
+                    <span key={tag} style={{ padding: "5px 14px", fontSize: "12px", borderRadius: "14px", background: "#1e3a5f", color: "#93c5fd" }}>{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </main>
-
-        {/* Right column */}
-        <aside style={{ width: "320px", flexShrink: 0, padding: "28px 24px 28px 0", display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Career Overview */}
-          <div style={{ background: "#111c30", borderRadius: "12px", border: "1px solid #1e293b", padding: "20px" }}>
-            <p style={{ fontSize: "14px", fontWeight: 600, color: "#f8fafc", margin: "0 0 16px" }}>Career Overview</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <OverviewStat icon="💼" value={String(totalPositions)} label="Total Positions" />
-              <OverviewStat icon="📅" value="2+" label="Years of Experience" />
-              <OverviewStat icon="☑️" value={String(totalResponsibilities)} label="Key Responsibilities Tracked" />
-              <OverviewStat icon="⭐" value="3" label="Projects" />
-            </div>
-          </div>
-
-          {/* Add New Job */}
-          <div style={{ background: "#111c30", borderRadius: "12px", border: "1px solid #1e293b", padding: "20px" }}>
-            <p style={{ fontSize: "14px", fontWeight: 600, color: "#f8fafc", margin: "0 0 16px" }}>Add New Job</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <DraftField label="Company Name *" placeholder="e.g. Peraton" value={draft.company} onChange={v => setDraft(p => ({ ...p, company: v }))} />
-              <DraftField label="Job Title *" placeholder="e.g. Cybersecurity Engineer" value={draft.title} onChange={v => setDraft(p => ({ ...p, title: v }))} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <DraftField label="Start Date *" placeholder="e.g. Aug 2024" value={draft.startDate} onChange={v => setDraft(p => ({ ...p, startDate: v }))} />
-                <DraftField label="End Date" placeholder="e.g. Present" value={draft.endDate} onChange={v => setDraft(p => ({ ...p, endDate: v }))} />
-              </div>
-              <DraftField label="Location" placeholder="e.g. Herndon, VA" value={draft.location} onChange={v => setDraft(p => ({ ...p, location: v }))} />
-              <DraftField label="Salary (Optional)" placeholder="e.g. $100,000" value={draft.salary} onChange={v => setDraft(p => ({ ...p, salary: v }))} />
-              <div>
-                <label style={labelStyle}>Notes (Optional)</label>
-                <textarea value={draft.notes} onChange={e => setDraft(p => ({ ...p, notes: e.target.value }))} placeholder="Add any additional details about this role…" style={{ ...inputStyle, minHeight: "70px", resize: "vertical" }} />
-              </div>
-              <button onClick={addJob} style={{ padding: "12px", fontSize: "13px", fontWeight: 600, borderRadius: "8px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", marginTop: "4px" }}>+ Add Job</button>
-            </div>
-          </div>
-        </aside>
       </div>
-    </div>
-  );
-}
-
-/* ─── Small helper components ─── */
-const labelStyle = { fontSize: "12px", fontWeight: 500, color: "#94a3b8", display: "block", marginBottom: "6px" };
-const inputStyle = { width: "100%", padding: "9px 12px", fontSize: "13px", border: "1px solid #334155", borderRadius: "6px", background: "#0f172a", color: "#e2e8f0", boxSizing: "border-box" };
-
-function OverviewStat({ icon, value, label }) {
-  return (
-    <div style={{ background: "#0f172a", borderRadius: "8px", border: "1px solid #1e293b", padding: "14px" }}>
-      <span style={{ fontSize: "16px" }}>{icon}</span>
-      <p style={{ fontSize: "22px", fontWeight: 700, color: "#f8fafc", margin: "6px 0 2px" }}>{value}</p>
-      <p style={{ fontSize: "11px", color: "#64748b", margin: 0, lineHeight: 1.3 }}>{label}</p>
-    </div>
-  );
-}
-
-function DraftField({ label, placeholder, value, onChange }) {
-  return (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inputStyle} />
-    </div>
-  );
-}
-
-function EditField({ label, value, onChange }) {
-  return (
-    <div>
-      <label style={{ ...labelStyle, fontSize: "11px", marginBottom: "4px" }}>{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)} style={{ ...inputStyle, padding: "7px 10px", fontSize: "12px" }} />
-    </div>
-  );
-}
-
-function AddResponsibility({ onAdd }) {
-  const [text, setText] = useState("");
-  return (
-    <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-      <input
-        value={text}
-        onChange={e => setText(e.target.value)}
-        onKeyDown={e => { if (e.key === "Enter" && text.trim()) { onAdd(text.trim()); setText(""); } }}
-        placeholder="Add a responsibility or achievement…"
-        style={{ ...inputStyle, flex: 1 }}
-      />
-      <button onClick={() => { if (text.trim()) { onAdd(text.trim()); setText(""); } }} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>+ Add</button>
     </div>
   );
 }
