@@ -142,11 +142,9 @@ export default function CareerBoard() {
   }
 
   const navItems = [
-    { key: "dashboard", label: "Dashboard", icon: "🏠" },
-    { key: "journal", label: "Career Journal", icon: "📓" },
-    { key: "certifications", label: "Certifications", icon: "🎓" },
-    { key: "goals", label: "Goals", icon: "🎯" },
-    { key: "settings", label: "Settings", icon: "⚙️" },
+    { key: "journal", label: "Career Journal" },
+    { key: "certifications", label: "Certifications" },
+    { key: "goals", label: "Goals" },
   ];
 
   return (
@@ -165,13 +163,7 @@ export default function CareerBoard() {
             style={{ width: "100%", padding: "9px 14px", fontSize: "13px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
           />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px", flexShrink: 0 }}>
-          <span style={{ fontSize: "16px", color: "#64748b" }}>🔔</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 600 }}>NM</div>
-            <span style={{ fontSize: "13px", color: "#cbd5e1" }}>Nicholas M.</span>
-          </div>
-        </div>
+        <div style={{ width: "200px", flexShrink: 0 }} />
       </header>
 
       {/* ═══ Body: sidebar + list + reader ═══ */}
@@ -210,7 +202,7 @@ export default function CareerBoard() {
               <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#f8fafc", margin: 0 }}>Career Journal</h2>
               <button onClick={addEntry} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 500, borderRadius: "8px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>+ New Entry</button>
             </div>
-            <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 16px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 16px", lineHeight: 1.5 }}>
               Capture your thoughts, wins, challenges, and ideas. This is your space to reflect, plan, and track your journey.
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
