@@ -73,6 +73,7 @@ export default function CareerBoard() {
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("All");
   const [editing, setEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Load persisted data on mount
   useEffect(() => {
@@ -230,7 +231,7 @@ export default function CareerBoard() {
               return (
                 <div
                   key={entry.id}
-                  onClick={() => { setSelectedId(entry.id); setEditing(false); }}
+                  onClick={() => { setSelectedId(entry.id); setEditing(false); setMenuOpen(false); }}
                   style={{
                     padding: "14px 16px", borderRadius: "10px", cursor: "pointer",
                     background: isSelected ? "#12233f" : "#0f1a2e",
@@ -267,7 +268,7 @@ export default function CareerBoard() {
             </div>
           ) : editing ? (
             /* ── Editor ── */
-            <div style={{ maxWidth: "720px" }}>
+            <div style={{ maxWidth: "720px", margin: 0, textAlign: "left" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <input
                   value={selected.date}
@@ -310,16 +311,22 @@ export default function CareerBoard() {
             </div>
           ) : (
             /* ── Reader ── */
-            <div style={{ maxWidth: "720px" }}>
+            <div style={{ maxWidth: "720px", margin: 0, textAlign: "left" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
                 <span style={{ fontSize: "13px", color: "#94a3b8" }}>{selected.date}</span>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button onClick={() => setEditing(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer" }}>✏️ Edit</button>
-                  <button onClick={() => removeEntry(selected.id)} title="Delete entry" style={{ padding: "7px 12px", fontSize: "13px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", cursor: "pointer" }}>⋮</button>
+                <div style={{ display: "flex", gap: "8px", position: "relative" }}>
+                  <button onClick={() => setEditing(true)} style={{ padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer" }}>Edit</button>
+                  <button onClick={() => setMenuOpen(o => !o)} title="More options" style={{ padding: "7px 12px", fontSize: "13px", borderRadius: "6px", border: "1px solid #334155", background: menuOpen ? "#1e293b" : "#0f172a", color: "#94a3b8", cursor: "pointer" }}>⋮</button>
+                  {menuOpen && (
+                    <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, background: "#0f1a2e", border: "1px solid #334155", borderRadius: "8px", boxShadow: "0 6px 20px rgba(0,0,0,0.4)", zIndex: 20, minWidth: "140px", overflow: "hidden" }}>
+                      <button onClick={() => { setEditing(true); setMenuOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", fontSize: "13px", border: "none", background: "transparent", color: "#cbd5e1", cursor: "pointer" }}>Edit</button>
+                      <button onClick={() => { removeEntry(selected.id); setMenuOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", fontSize: "13px", border: "none", borderTop: "1px solid #1e293b", background: "transparent", color: "#f87171", cursor: "pointer" }}>Delete entry</button>
+                    </div>
+                  )}
                 </div>
               </div>
-              <h1 style={{ fontSize: "26px", fontWeight: 700, color: "#f8fafc", margin: "0 0 20px" }}>{selected.title}</h1>
-              <div>{renderBody(selected.body)}</div>
+              <h1 style={{ fontSize: "26px", fontWeight: 700, color: "#f8fafc", margin: "0 0 20px", textAlign: "left" }}>{selected.title}</h1>
+              <div style={{ textAlign: "left" }}>{renderBody(selected.body)}</div>
               {(selected.tags || []).length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "24px" }}>
                   {selected.tags.map(tag => (
