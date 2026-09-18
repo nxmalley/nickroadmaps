@@ -16,9 +16,15 @@ const newEntryTemplate = () => ({
   body: "",
 });
 
+// Bullet markers by nesting depth, cycling for deeper levels.
+const BULLET_MARKERS = ["•", "◦", "▪", "‣"];
+
 /**
- * Render a journal body: lines ending in ":" become section headers,
- * lines starting with "- " become bullets, blank lines are spacing.
+ * Render a journal body:
+ *  - lines ending in ":" become section headers
+ *  - lines starting with "- " (optionally indented) become bullets;
+ *    leading whitespace (2 spaces or 1 tab per level) sets nesting depth
+ *  - blank lines are spacing
  */
 function renderBody(body) {
   const lines = body.split("\n");
@@ -28,9 +34,12 @@ function renderBody(body) {
   const flushBullets = (key) => {
     if (bulletBuffer.length === 0) return;
     out.push(
-      <ul key={`ul-${key}`} style={{ margin: "0 0 14px", paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
+      <ul key={`ul-${key}`} style={{ listStyle: "none", margin: "0 0 16px", padding: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
         {bulletBuffer.map((b, i) => (
-          <li key={i} style={{ fontSize: "14px", color: "#cbd5e1", lineHeight: 1.6 }}>{b}</li>
+          <li key={i} style={{ display: "flex", gap: "10px", fontSize: "16px", color: "#cbd5e1", lineHeight: 1.6, paddingLeft: `${b.depth * 24}px` }}>
+            <span style={{ flexShrink: 0, color: "#60a5fa" }}>{BULLET_MARKERS[b.depth % BULLET_MARKERS.length]}</span>
+            <span>{b.text}</span>
+          </li>
         ))}
       </ul>
     );
@@ -38,24 +47,30 @@ function renderBody(body) {
   };
 
   lines.forEach((raw, idx) => {
+    // Measure indentation before trimming. Tabs count as one level each;
+    // every 2 leading spaces counts as one level.
+    const match = raw.match(/^(\s*)-\s+(.*)$/);
+    if (match) {
+      const indent = match[1];
+      const spaces = indent.replace(/\t/g, "  ").length; // tab = 2 spaces
+      const depth = Math.floor(spaces / 2);
+      bulletBuffer.push({ text: match[2], depth });
+      return;
+    }
+
     const line = raw.trim();
-    if (line.startsWith("- ")) {
-      bulletBuffer.push(line.slice(2));
-      return;
-    }
     flushBullets(idx);
-    if (line === "") {
-      return;
-    }
+    if (line === "") return;
+
     if (line.endsWith(":")) {
       out.push(
-        <p key={idx} style={{ fontSize: "15px", fontWeight: 600, color: "#e2e8f0", margin: "8px 0 10px" }}>
+        <p key={idx} style={{ fontSize: "18px", fontWeight: 600, color: "#e2e8f0", margin: "10px 0 12px" }}>
           {line.slice(0, -1)}
         </p>
       );
     } else {
       out.push(
-        <p key={idx} style={{ fontSize: "14px", color: "#cbd5e1", lineHeight: 1.6, margin: "0 0 14px" }}>
+        <p key={idx} style={{ fontSize: "16px", color: "#cbd5e1", lineHeight: 1.65, margin: "0 0 16px" }}>
           {line}
         </p>
       );
@@ -289,8 +304,20 @@ export default function CareerBoard() {
               <textarea
                 value={selected.body}
                 onChange={e => updateEntry(selected.id, { body: e.target.value })}
-                placeholder={"Write your entry…\n\nTip: end a line with ':' for a section header, and start a line with '- ' for a bullet."}
-                style={{ width: "100%", minHeight: "340px", fontSize: "14px", lineHeight: 1.6, color: "#cbd5e1", background: "#0f1a2e", border: "1px solid #1e293b", borderRadius: "10px", padding: "16px", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }}
+                onKeyDown={e => {
+                  if (e.key === "Tab") {
+                    e.preventDefault();
+                    const ta = e.target;
+                    const start = ta.selectionStart;
+                    const end = ta.selectionEnd;
+                    const next = selected.body.slice(0, start) + "  " + selected.body.slice(end);
+                    updateEntry(selected.id, { body: next });
+                    // Restore caret just after the inserted spaces.
+                    requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 2; });
+                  }
+                }}
+                placeholder={"Write your entry…\n\nTip: end a line with ':' for a section header, and start a line with '- ' for a bullet. Press Tab (or add spaces) before '- ' to nest a sub-bullet."}
+                style={{ width: "100%", minHeight: "340px", fontSize: "16px", lineHeight: 1.6, color: "#cbd5e1", background: "#0f1a2e", border: "1px solid #1e293b", borderRadius: "10px", padding: "16px", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }}
               />
               <div style={{ marginTop: "16px" }}>
                 <p style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", margin: "0 0 10px" }}>Tags</p>
