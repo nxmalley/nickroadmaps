@@ -115,6 +115,35 @@ const INITIAL_LOG = [
   { date: "Jul 2026", assets: "42,335", netWorth: "27,129", salary: "100,000", debt: "15,206", credit: "770" },
 ];
 
+/* ─── Expense tracking config ─── */
+// Tracking periods run July → June. Order matters for month-over-month deltas.
+const EXPENSE_MONTHS = ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+
+const EXPENSE_CATEGORIES = [
+  { key: "groceries", label: "Groceries", icon: "🛒", color: "#22c55e" },
+  { key: "dining", label: "Dining / Entertainment", icon: "🍽️", color: "#f59e0b" },
+  { key: "personalCare", label: "Personal Care", icon: "🧴", color: "#a78bfa" },
+  { key: "misc", label: "Miscellaneous", icon: "•••", color: "#64748b" },
+  { key: "gas", label: "Gas", icon: "⛽", color: "#14b8a6" },
+  { key: "malnax", label: "Business - Malnax", icon: "💼", color: "#3b82f6" },
+  { key: "transportation", label: "Transportation", icon: "🚌", color: "#8b5cf6" },
+  { key: "lawyer", label: "Lawyer / Fines", icon: "⚖️", color: "#ef4444" },
+  { key: "carMaintenance", label: "Car Maintenance", icon: "🔧", color: "#eab308" },
+];
+
+// Which categories were tracked in each period. 2024-2025 used only the first 5.
+const EXPENSE_PERIOD_CATEGORIES = {
+  "2024-2025": ["groceries", "dining", "personalCare", "misc", "gas"],
+  "2025-2026": EXPENSE_CATEGORIES.map(c => c.key),
+  "2026-2027": EXPENSE_CATEGORIES.map(c => c.key),
+};
+
+const EXPENSE_PERIODS = [
+  { key: "2024-2025", label: "2024 – 2025", range: "Jul 2024 – Jun 2025" },
+  { key: "2025-2026", label: "2025 – 2026", range: "Jul 2025 – Jun 2026" },
+  { key: "2026-2027", label: "2026 – 2027", range: "Jul 2026 – Jun 2027" },
+];
+
 /* ─── Migration helper (pure — no component deps) ─── */
 function migrateEarnedItems(items) {
   if (!Array.isArray(items)) return items;
@@ -209,6 +238,13 @@ export default function FinancialRoadmap() {
     "2026": { Jan: 3568.24, Feb: 3939.40, Mar: 6194.06, Apr: 6011.25, May: 5059.40, Jun: 5209.34, Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0 },
   });
 
+  // Expense tracking — keyed by tracking period, then category, then month.
+  // Periods run Jul → Jun. 2024-2025 used only the first 5 categories.
+  const [expenseData, setExpenseData] = useState({});
+  const [expenseYear, setExpenseYear] = useState("2025-2026");
+  const [editingCategory, setEditingCategory] = useState(null); // category key being edited
+  const [expandedExpenseYear, setExpandedExpenseYear] = useState("2025-2026");
+
   // Net worth log — loaded from Upstash on mount
   const [log, setLog] = useState(INITIAL_LOG);
   const [logDraft, setLogDraft] = useState({ date: "", assets: "", netWorth: "", salary: "", debt: "", credit: "" });
@@ -274,6 +310,7 @@ export default function FinancialRoadmap() {
             if (data.futureNotes) setFutureNotes(data.futureNotes);
             if (data.earnedItems) setEarnedItems(migrateEarnedItems(data.earnedItems));
             if (data.otherAssets) setOtherAssets(data.otherAssets);
+            if (data.expenseData) setExpenseData(data.expenseData);
             if (data.completedArchive) setCompletedArchive(data.completedArchive);
           }
         }
@@ -286,13 +323,13 @@ export default function FinancialRoadmap() {
   // Save all financial data to server whenever any piece changes
   useEffect(() => {
     if (!dataLoaded) return; // Don't save before initial load completes
-    const data = { log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, completedArchive };
+    const data = { log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, expenseData, completedArchive };
     fetch('/api/financial-data', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }).catch(() => { /* silent */ });
-  }, [dataLoaded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, completedArchive]);
+  }, [dataLoaded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, expenseData, completedArchive]);
 
   // Auto-archive fully completed groups
   useEffect(() => {
@@ -1655,6 +1692,94 @@ export default function FinancialRoadmap() {
       return `$${val.toFixed(0)}`;
     }
 
+    // ─── Expense tracking helpers ───
+    const activeCatKeys = EXPENSE_PERIOD_CATEGORIES[expenseYear] || EXPENSE_CATEGORIES.map(c => c.key);
+    const activeCats = EXPENSE_CATEGORIES.filter(c => activeCatKeys.includes(c.key));
+    const periodExpenses = expenseData[expenseYear] || {};
+
+    // Total for a category across the whole period.
+    const catTotal = (catKey, period = expenseYear) => {
+      const months = (expenseData[period] || {})[catKey] || {};
+      return EXPENSE_MONTHS.reduce((s, m) => s + (Number(months[m]) || 0), 0);
+    };
+    // Value for a given month.
+    const catMonth = (catKey, month) => Number((periodExpenses[catKey] || {})[month]) || 0;
+
+    // Latest month with any data entered across active categories, and the one before it.
+    const monthsWithData = EXPENSE_MONTHS.filter(m => activeCatKeys.some(k => catMonth(k, m) > 0));
+    const latestMonth = monthsWithData[monthsWithData.length - 1] || null;
+    const prevMonth = latestMonth ? EXPENSE_MONTHS[EXPENSE_MONTHS.indexOf(latestMonth) - 1] : null;
+
+    // Month-over-month % change for a category (latest vs prev month).
+    const catDelta = (catKey) => {
+      if (!latestMonth || !prevMonth) return null;
+      const cur = catMonth(catKey, latestMonth);
+      const prev = catMonth(catKey, prevMonth);
+      if (prev === 0) return cur === 0 ? 0 : null; // no baseline
+      return ((cur - prev) / prev) * 100;
+    };
+
+    const periodTotalAll = activeCatKeys.reduce((s, k) => s + catTotal(k), 0);
+    const latestMonthTotal = latestMonth ? activeCatKeys.reduce((s, k) => s + catMonth(k, latestMonth), 0) : 0;
+    const prevMonthTotal = prevMonth ? activeCatKeys.reduce((s, k) => s + catMonth(k, prevMonth), 0) : 0;
+    const totalDeltaPct = prevMonthTotal > 0 ? ((latestMonthTotal - prevMonthTotal) / prevMonthTotal) * 100 : null;
+
+    const money = (v) => `$${(Number(v) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const catLabel = (key) => EXPENSE_CATEGORIES.find(c => c.key === key)?.label || key;
+
+    function updateExpense(period, catKey, month, value) {
+      const num = parseFloat(value) || 0;
+      setExpenseData(prev => ({
+        ...prev,
+        [period]: {
+          ...(prev[period] || {}),
+          [catKey]: { ...((prev[period] || {})[catKey] || {}), [month]: num },
+        },
+      }));
+    }
+
+    function generateExpenseReport() {
+      const period = EXPENSE_PERIODS.find(p => p.key === expenseYear);
+      const rows = activeCats.map(c => {
+        const total = catTotal(c.key);
+        const pct = periodTotalAll > 0 ? ((total / periodTotalAll) * 100).toFixed(1) : "0.0";
+        return `<tr><td style="padding:6px 10px;border-bottom:1px solid #ddd">${c.label}</td><td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right">${money(total)}</td><td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right">${pct}%</td></tr>`;
+      }).join("");
+      const monthRows = EXPENSE_MONTHS.map(m => {
+        const tot = activeCatKeys.reduce((s, k) => s + catMonth(k, m), 0);
+        return `<tr><td style="padding:4px 10px">${m}</td><td style="padding:4px 10px;text-align:right">${money(tot)}</td></tr>`;
+      }).join("");
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Expense Report ${period?.label || expenseYear}</title></head>
+        <body style="font-family:Arial,sans-serif;color:#111;padding:32px;max-width:760px;margin:auto">
+          <h1 style="margin:0 0 4px">Expense Report</h1>
+          <p style="color:#555;margin:0 0 20px">${period?.range || expenseYear} · Total: <strong>${money(periodTotalAll)}</strong></p>
+          <h2 style="font-size:16px;margin:0 0 8px">By Category</h2>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr>
+            <th style="text-align:left;padding:6px 10px;border-bottom:2px solid #111">Category</th>
+            <th style="text-align:right;padding:6px 10px;border-bottom:2px solid #111">Total</th>
+            <th style="text-align:right;padding:6px 10px;border-bottom:2px solid #111">% of Spend</th>
+          </tr></thead><tbody>${rows}</tbody></table>
+          <h2 style="font-size:16px;margin:0 0 8px">Monthly Totals</h2>
+          <table style="width:100%;border-collapse:collapse"><tbody>${monthRows}</tbody></table>
+          <p style="color:#888;font-size:12px;margin-top:24px">Generated ${new Date().toLocaleDateString()}</p>
+        </body></html>`;
+      const win = window.open("", "_blank");
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(() => win.print(), 300);
+      }
+    }
+
+    function DeltaBadge({ pct }) {
+      if (pct === null) return <span style={{ fontSize: "11px", color: "#64748b" }}>— new</span>;
+      const up = pct > 0.05, down = pct < -0.05;
+      const color = up ? "#f87171" : down ? "#4ade80" : "#94a3b8";
+      const arrow = up ? "↑" : down ? "↓" : "—";
+      return <span style={{ fontSize: "11px", color }}>{arrow} {Math.abs(pct).toFixed(1)}%</span>;
+    }
+
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         {/* ═══ Page Header ═══ */}
@@ -1835,6 +1960,152 @@ export default function FinancialRoadmap() {
             </div>
           </div>
         )}
+
+        {/* ═══ Expense Categories Section ═══ */}
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "16px" }}>
+            <div>
+              <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Expense Categories</h3>
+              <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>Total spent across all categories for the selected period.</p>
+            </div>
+            <select
+              value={expenseYear}
+              onChange={e => { setExpenseYear(e.target.value); setEditingCategory(null); }}
+              style={{ padding: "8px 12px", fontSize: "12px", border: "1px solid #334155", borderRadius: "8px", background: "#0f172a", color: "#e2e8f0", cursor: "pointer" }}
+            >
+              {EXPENSE_PERIODS.map(p => <option key={p.key} value={p.key}>{p.range}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "16px", marginBottom: "24px" }}>
+            {/* Left: category panels */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+              {activeCats.map(cat => {
+                const total = catTotal(cat.key);
+                const delta = catDelta(cat.key);
+                const isEditing = editingCategory === cat.key;
+                return (
+                  <div
+                    key={cat.key}
+                    onClick={() => setEditingCategory(isEditing ? null : cat.key)}
+                    style={{
+                      background: "#1e293b", borderRadius: "12px",
+                      border: isEditing ? `1px solid ${cat.color}` : "1px solid #334155",
+                      padding: "16px", cursor: "pointer", transition: "border-color 0.15s",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: `${cat.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}>{cat.icon}</div>
+                        <span style={{ fontSize: "12px", color: "#94a3b8", lineHeight: 1.2 }}>{cat.label}</span>
+                      </div>
+                      <span style={{ fontSize: "13px", color: "#475569" }}>›</span>
+                    </div>
+                    <p style={{ fontSize: "20px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px" }}>{money(total)}</p>
+                    <DeltaBadge pct={delta} />
+                    <div style={{ height: "4px", background: "#0f172a", borderRadius: "2px", overflow: "hidden", marginTop: "10px" }}>
+                      <div style={{ width: `${periodTotalAll > 0 ? Math.min((total / periodTotalAll) * 100, 100) : 0}%`, height: "100%", background: cat.color, borderRadius: "2px" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right: total expenses + report */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "18px 20px" }}>
+                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 6px" }}>Total Expenses</p>
+                <p style={{ fontSize: "26px", fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px" }}>{money(periodTotalAll)}</p>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #334155" }}>
+                  <div>
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>{prevMonth ? `${prevMonth}` : "Last Month"}</p>
+                    <p style={{ fontSize: "15px", fontWeight: 600, color: "#94a3b8", margin: 0 }}>{money(prevMonthTotal)}</p>
+                  </div>
+                  <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>{latestMonth ? `${latestMonth}` : "This Month"}</p>
+                    <p style={{ fontSize: "15px", fontWeight: 600, color: "#f1f5f9", margin: 0 }}>{money(latestMonthTotal)}</p>
+                    <div style={{ marginTop: "2px" }}><DeltaBadge pct={totalDeltaPct} /></div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "18px 20px" }}>
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>Want a detailed view?</p>
+                <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 12px", lineHeight: 1.4 }}>Generate a PDF report with a full breakdown and comparison of your spending.</p>
+                <button onClick={generateExpenseReport} style={{ width: "100%", padding: "10px", fontSize: "12px", fontWeight: 500, borderRadius: "8px", border: "none", background: "#0F6E56", color: "#fff", cursor: "pointer" }}>Generate Report</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Inline monthly editor for the selected category */}
+          {editingCategory && (
+            <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "20px 24px", marginBottom: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <span style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9" }}>{catLabel(editingCategory)} — Monthly Amounts ({EXPENSE_PERIODS.find(p => p.key === expenseYear)?.range})</span>
+                <button onClick={() => setEditingCategory(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "14px" }}>✕</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "10px" }}>
+                {EXPENSE_MONTHS.map(month => (
+                  <div key={month} style={{ padding: "10px", background: "#0f172a", borderRadius: "6px" }}>
+                    <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 4px", textTransform: "uppercase" }}>{month}</p>
+                    <input
+                      type="number"
+                      value={catMonth(editingCategory, month) || ""}
+                      onChange={e => updateExpense(expenseYear, editingCategory, month, e.target.value)}
+                      placeholder="0.00"
+                      style={{ width: "100%", padding: "4px 6px", fontSize: "12px", border: "1px solid #334155", borderRadius: "4px", background: "#1e293b", color: "#e2e8f0", boxSizing: "border-box" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Yearly breakdown accordion */}
+          <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "16px 20px", marginBottom: "8px" }}>
+            <div style={{ marginBottom: "12px" }}>
+              <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px" }}>Yearly Breakdown</h4>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>Your spending by category for each tracking period.</p>
+            </div>
+            {EXPENSE_PERIODS.map(period => {
+              const keys = EXPENSE_PERIOD_CATEGORIES[period.key] || [];
+              const periodTotal = keys.reduce((s, k) => s + catTotal(k, period.key), 0);
+              const isOpen = expandedExpenseYear === period.key;
+              return (
+                <div key={period.key} style={{ borderTop: "1px solid #334155" }}>
+                  <div
+                    onClick={() => setExpandedExpenseYear(isOpen ? null : period.key)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 4px", cursor: "pointer" }}
+                  >
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "#e2e8f0" }}>{period.label} <span style={{ color: "#64748b", fontWeight: 400 }}>({period.range})</span></span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9" }}>{money(periodTotal)}</span>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{isOpen ? "⌃" : "⌄"}</span>
+                    </div>
+                  </div>
+                  {isOpen && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", padding: "4px 4px 16px" }}>
+                      {keys.map(k => {
+                        const cat = EXPENSE_CATEGORIES.find(c => c.key === k);
+                        const total = catTotal(k, period.key);
+                        const pct = periodTotal > 0 ? ((total / periodTotal) * 100).toFixed(1) : "0.0";
+                        return (
+                          <div key={k} style={{ background: "#0f172a", borderRadius: "8px", padding: "12px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                              <span style={{ fontSize: "12px" }}>{cat?.icon}</span>
+                              <span style={{ fontSize: "11px", color: "#94a3b8" }}>{cat?.label}</span>
+                            </div>
+                            <p style={{ fontSize: "15px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 2px" }}>{money(total)}</p>
+                            <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{pct}%</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* ═══ Financial History Section ═══ */}
         <div>
