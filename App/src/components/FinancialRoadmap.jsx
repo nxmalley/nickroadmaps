@@ -116,8 +116,8 @@ const INITIAL_LOG = [
 ];
 
 /* ─── Expense tracking config ─── */
-// Tracking periods run October → September. Order matters for month-over-month deltas.
-const EXPENSE_MONTHS = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"];
+// Tracking periods run November → October. Order matters for month-over-month deltas.
+const EXPENSE_MONTHS = ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
 
 const EXPENSE_CATEGORIES = [
   { key: "groceries", label: "Groceries", icon: "🛒", color: "#22c55e" },
@@ -141,9 +141,9 @@ const EXPENSE_PERIOD_CATEGORIES = {
 };
 
 const EXPENSE_PERIODS = [
-  { key: "2024-2025", label: "2024 – 2025", range: "Oct 2024 – Sep 2025" },
-  { key: "2025-2026", label: "2025 – 2026", range: "Oct 2025 – Sep 2026" },
-  { key: "2026-2027", label: "2026 – 2027", range: "Oct 2026 – Sep 2027" },
+  { key: "2024-2025", label: "2024 – 2025", range: "Nov 2024 – Oct 2025" },
+  { key: "2025-2026", label: "2025 – 2026", range: "Nov 2025 – Oct 2026" },
+  { key: "2026-2027", label: "2026 – 2027", range: "Nov 2026 – Oct 2027" },
 ];
 
 /* ─── Migration helper (pure — no component deps) ─── */
