@@ -127,15 +127,17 @@ const EXPENSE_CATEGORIES = [
   { key: "gas", label: "Gas", icon: "⛽", color: "#14b8a6" },
   { key: "malnax", label: "Business - Malnax", icon: "💼", color: "#3b82f6" },
   { key: "transportation", label: "Transportation", icon: "🚌", color: "#8b5cf6" },
-  { key: "lawyer", label: "Lawyer / Fines", icon: "⚖️", color: "#ef4444" },
+  { key: "legalPersonal", label: "Legal - Personal", icon: "⚖️", color: "#ef4444" },
+  { key: "legalTaxPrep", label: "Legal - Tax Prep", icon: "🧾", color: "#f97316" },
+  { key: "feesFines", label: "Fees / Fines", icon: "🚫", color: "#dc2626" },
   { key: "carMaintenance", label: "Car Maintenance", icon: "🔧", color: "#eab308" },
   { key: "vacation", label: "Vacation", icon: "✈️", color: "#06b6d4" },
 ];
 
 // Which categories were tracked in each period. 2024-2025 used only the
-// original 5, plus Vacation.
+// original 5, plus Vacation and the legal/fees categories.
 const EXPENSE_PERIOD_CATEGORIES = {
-  "2024-2025": ["groceries", "dining", "personalCare", "misc", "gas", "vacation"],
+  "2024-2025": ["groceries", "dining", "personalCare", "misc", "gas", "vacation", "legalPersonal", "legalTaxPrep", "feesFines"],
   "2025-2026": EXPENSE_CATEGORIES.map(c => c.key),
   "2026-2027": EXPENSE_CATEGORIES.map(c => c.key),
 };
