@@ -137,7 +137,7 @@ const EXPENSE_CATEGORIES = [
 // Which categories were tracked in each period. 2024-2025 used only the
 // original 5, plus Vacation and the legal/fees categories.
 const EXPENSE_PERIOD_CATEGORIES = {
-  "2024-2025": ["groceries", "dining", "personalCare", "misc", "gas", "vacation", "legalPersonal", "legalTaxPrep", "feesFines"],
+  "2024-2025": ["groceries", "dining", "personalCare", "misc", "gas", "vacation", "legalPersonal", "legalTaxPrep", "feesFines", "carMaintenance"],
   "2025-2026": EXPENSE_CATEGORIES.map(c => c.key),
   "2026-2027": EXPENSE_CATEGORIES.map(c => c.key),
 };
