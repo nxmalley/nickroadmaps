@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { nickRoadmap } from '../data/nick-roadmap.js';
+import { craftsmanRoadmap } from '../data/craftsman-roadmap.js';
 import { financialRoadmap } from '../data/financial-roadmap.js';
 import { careerBoard } from '../data/career-board.js';
 
 /** All bundled roadmaps — these load even without a backend. */
-const BUNDLED_ROADMAPS = [nickRoadmap, financialRoadmap, careerBoard];
+const BUNDLED_ROADMAPS = [craftsmanRoadmap, nickRoadmap, financialRoadmap, careerBoard];
 
 /**
  * Computes metadata summary for a single roadmap.

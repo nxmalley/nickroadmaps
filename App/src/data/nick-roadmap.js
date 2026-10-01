@@ -12,7 +12,7 @@ export const NICK_ROADMAP_ID = "nick-2yr-engineering";
 export const nickRoadmap = {
   id: NICK_ROADMAP_ID,
   title: "Nick's 2-Year Engineering Roadmap",
-  subtitle: "Jun 2026 – Feb 2029 · v3 updated Jul 9, 2026",
+  subtitle: "📦 Archived / historical (v3) — superseded by the Craftsman Track. Jun 2026 – Feb 2029",
   dateRange: { start: "2026-06-15", end: "2029-02-28" },
   accentColors: ["#0F6E56", "#185FA5", "#534AB7", "#993C1D"],
   categories: {
