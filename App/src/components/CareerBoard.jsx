@@ -303,16 +303,14 @@ export default function CareerBoard() {
                           </div>
                         </div>
                       ) : (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
-                          <div style={{ display: "flex", gap: "14px", alignItems: "flex-start", minWidth: 0 }}>
-                            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#1e3a5f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏅</div>
-                            <div style={{ minWidth: 0 }}>
-                              <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 3px" }}>{cert.name || "Untitled Certification"}</p>
-                              {cert.issuer && <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 2px" }}>{cert.issuer}</p>}
-                              {cert.earned && <p style={{ fontSize: "12px", color: "#60a5fa", margin: 0 }}>Earned {cert.earned}</p>}
-                            </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "10px" }}>
+                          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#1e3a5f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏅</div>
+                          <div>
+                            <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 3px" }}>{cert.name || "Untitled Certification"}</p>
+                            {cert.issuer && <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 2px" }}>{cert.issuer}</p>}
+                            {cert.earned && <p style={{ fontSize: "12px", color: "#60a5fa", margin: 0 }}>Earned {cert.earned}</p>}
                           </div>
-                          <button onClick={() => setEditingCertId(cert.id)} style={{ padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                          <button onClick={() => setEditingCertId(cert.id)} style={{ padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer" }}>Edit</button>
                         </div>
                       )}
                     </div>
