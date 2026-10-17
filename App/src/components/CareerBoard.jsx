@@ -93,7 +93,11 @@ function renderBody(body) {
 }
 
 export default function CareerBoard() {
-  const [dataLoaded, setDataLoaded] = useState(false);
+  // `loadSucceeded` is set true ONLY when the server load genuinely returns.
+  // Saving is gated on this (not merely on mount completing), so a failed or
+  // transient-error load can never trigger a PUT that overwrites good server
+  // data with in-memory defaults.
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
   const [entries, setEntries] = useState(INITIAL_ENTRIES);
   const [certifications, setCertifications] = useState(INITIAL_CERTIFICATIONS);
   const [activeSection, setActiveSection] = useState("journal");
@@ -125,22 +129,30 @@ export default function CareerBoard() {
               setCertifications(data.certifications);
             }
           }
+          // Load genuinely succeeded (server responded ok) — safe to persist now.
+          if (!cancelled) setLoadSucceeded(true);
         }
-      } catch { /* local-only fallback */ }
-      if (!cancelled) setDataLoaded(true);
+        // If the response was NOT ok, we deliberately do NOT enable saving, so
+        // a failed load can never overwrite good server data with defaults.
+      } catch {
+        // Network/transient error — leave saving disabled for this session.
+        // Nothing is overwritten; the user keeps viewing in-memory defaults.
+      }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  // Persist whenever entries or certifications change (after initial load)
+  // Persist whenever entries or certifications change — ONLY after a successful
+  // load. If the load failed, loadSucceeded stays false and we never PUT,
+  // guaranteeing defaults can't clobber stored data.
   useEffect(() => {
-    if (!dataLoaded) return;
+    if (!loadSucceeded) return;
     fetch("/api/career-board-data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entries, certifications }),
     }).catch(() => { /* silent */ });
-  }, [dataLoaded, entries, certifications]);
+  }, [loadSucceeded, entries, certifications]);
 
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {

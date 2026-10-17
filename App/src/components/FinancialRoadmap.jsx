@@ -203,7 +203,10 @@ function migrateLog(entries) {
 
 /* ─── Component ─── */
 export default function FinancialRoadmap() {
-  const [dataLoaded, setDataLoaded] = useState(false);
+  // `loadSucceeded` is set true ONLY when the server load genuinely returns ok.
+  // Saving is gated on this so a failed/transient load can never trigger a PUT
+  // that overwrites good server data with in-memory defaults.
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
   const { progress, toggle } = useProgressStore("financial-masterplan");
   const [activePhase, setActivePhase] = useState(0);
   const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "rules" | "history" | "accounts" | "future"
@@ -317,23 +320,30 @@ export default function FinancialRoadmap() {
             if (data.expenseData) setExpenseData(data.expenseData);
             if (data.completedArchive) setCompletedArchive(data.completedArchive);
           }
+          // Load genuinely succeeded (server responded ok) — safe to persist now.
+          if (!cancelled) setLoadSucceeded(true);
         }
-      } catch { /* fallback to localStorage defaults already loaded */ }
-      if (!cancelled) setDataLoaded(true);
+        // If the response was NOT ok, saving stays disabled so a failed load
+        // can never overwrite good server data with defaults.
+      } catch {
+        // Network/transient error — leave saving disabled for this session.
+      }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  // Save all financial data to server whenever any piece changes
+  // Save all financial data to server — ONLY after a successful load. If the
+  // load failed, loadSucceeded stays false and we never PUT, so defaults can't
+  // clobber stored data.
   useEffect(() => {
-    if (!dataLoaded) return; // Don't save before initial load completes
+    if (!loadSucceeded) return;
     const data = { log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, expenseData, completedArchive };
     fetch('/api/financial-data', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }).catch(() => { /* silent */ });
-  }, [dataLoaded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, expenseData, completedArchive]);
+  }, [loadSucceeded, log, accountChangeLog, accounts, salaryHistory, earningsData, futureNotes, earnedItems, otherAssets, expenseData, completedArchive]);
 
   // Auto-archive fully completed groups
   useEffect(() => {
