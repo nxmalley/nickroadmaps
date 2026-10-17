@@ -3,9 +3,6 @@ import { useState, useEffect, useMemo } from "react";
 /* ─── Start with an empty board; entries are created by the user. ─── */
 const INITIAL_ENTRIES = [];
 
-// Bump when the seed data changes to force a one-time refresh of persisted entries.
-const SEED_VERSION = 5;
-
 const ALL_TAGS = ["Personal", "Career", "Growth", "Work", "Finance"];
 
 // Seed certifications — ordered newest first. Users can add/edit/remove.
@@ -115,11 +112,15 @@ export default function CareerBoard() {
         const res = await fetch("/api/career-board-data");
         if (res.ok) {
           const data = await res.json();
-          if (data && !cancelled && data.seedVersion === SEED_VERSION) {
+          if (data && !cancelled) {
+            // User-created entries are ALWAYS loaded if present — never gated
+            // behind seedVersion, so stored journal content is never discarded.
             if (Array.isArray(data.entries)) {
               setEntries(data.entries);
               setSelectedId(data.entries[0]?.id || null);
             }
+            // Certifications: use stored list if present; otherwise fall back to
+            // the seed (covers older saves that predate the certifications field).
             if (Array.isArray(data.certifications)) {
               setCertifications(data.certifications);
             }
@@ -137,7 +138,7 @@ export default function CareerBoard() {
     fetch("/api/career-board-data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries, certifications, seedVersion: SEED_VERSION }),
+      body: JSON.stringify({ entries, certifications }),
     }).catch(() => { /* silent */ });
   }, [dataLoaded, entries, certifications]);
 
