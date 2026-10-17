@@ -47,3 +47,22 @@ Before finishing any change:
 ## Emojis
 
 - Minimize the use of emojis in development.
+
+## Persisted Data Safety (Production — Upstash Redis)
+
+This app's user data (journal entries, certifications, financial roadmap, progress) lives ONLY in Upstash Redis in production, not in the codebase. There is no version history and no undo on a Redis `SET`. Treat every code path that can issue a write as production-affecting.
+
+Source edits are harmless at edit time but become live behavior the moment they are deployed and a user loads the app. Do NOT reason about safety based on file type ("it's just a .jsx file"). Reason about what the code DOES at runtime — specifically whether it can issue a destructive write.
+
+### Hard rules
+
+- **Never gate user-created data behind a version check.** Load persisted user content whenever it is present, unconditionally. A `seedVersion`/`dataVersion` mismatch must never cause stored content to be discarded or replaced with defaults. (A version field may gate *merging in new seed defaults*, never *dropping existing data*.)
+- **Never let a failed load lead to a write.** The save/persist path must be gated on a load that genuinely SUCCEEDED (server responded ok with usable data) — not merely on "mount finished." If the load fails, errors, or times out, saving must stay disabled for that session so in-memory defaults can never overwrite good server data.
+- **Prefer additive, non-destructive changes to persisted shapes.** When adding a field to a stored blob, extend it; do not alter how existing fields load or save.
+- **Blind full-blob overwrite (`redis.set(KEY, wholeObject)`) is the dangerous pattern.** Any component using load-then-save-whole-blob must only save after a verified successful load (see above). The safe reference pattern is `useProgressStore` (timestamp-based conflict resolution, per-item writes, no auto-overwrite on failed load).
+
+### Required behavior before touching persistence
+
+- Any change to code that reads from or writes to Redis (API routes under `api/`, or component load/save effects) is HIGH-RISK. Trace exactly what happens to existing stored data on both load and save BEFORE editing, and get explicit approval before changing anything that can mutate, gate, or overwrite stored data.
+- State plainly whether a change can issue a destructive write. Do not give safety reassurance you have not verified. A change that only *removes* or *blocks* a write cannot cause an overwrite; a change that adds or alters a write can.
+- Recommend a quick post-deploy verification (load the app, confirm data loads, make a trivial edit, reload, confirm it persisted) and note that an Upstash snapshot/backup before a risky deploy is a cheap restore point.
