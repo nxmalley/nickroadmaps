@@ -4,9 +4,17 @@ import { useState, useEffect, useMemo } from "react";
 const INITIAL_ENTRIES = [];
 
 // Bump when the seed data changes to force a one-time refresh of persisted entries.
-const SEED_VERSION = 4;
+const SEED_VERSION = 5;
 
 const ALL_TAGS = ["Personal", "Career", "Growth", "Work", "Finance"];
+
+// Seed certifications — ordered newest first. Users can add/edit/remove.
+const INITIAL_CERTIFICATIONS = [
+  { id: "cert-aws-saa", name: "AWS Certified Solutions Architect - Associate", issuer: "Amazon Web Services", earned: "June 2026" },
+  { id: "cert-az-104", name: "Microsoft Certified: Azure Administrator Associate (AZ-104)", issuer: "Microsoft", earned: "April 2025" },
+  { id: "cert-sec-plus", name: "CompTIA Security+", issuer: "CompTIA", earned: "December 2024" },
+  { id: "cert-isc2-cc", name: "ISC2 Certified in Cybersecurity (CC)", issuer: "ISC2", earned: "August 2023" },
+];
 
 const newEntryTemplate = () => ({
   id: `entry-${Date.now()}`,
@@ -14,6 +22,13 @@ const newEntryTemplate = () => ({
   title: "Untitled Entry",
   tags: [],
   body: "",
+});
+
+const newCertTemplate = () => ({
+  id: `cert-${Date.now()}`,
+  name: "",
+  issuer: "",
+  earned: "",
 });
 
 // Bullet markers by nesting depth, cycling for deeper levels.
@@ -83,11 +98,13 @@ function renderBody(body) {
 export default function CareerBoard() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [entries, setEntries] = useState(INITIAL_ENTRIES);
+  const [certifications, setCertifications] = useState(INITIAL_CERTIFICATIONS);
   const [activeSection, setActiveSection] = useState("journal");
   const [selectedId, setSelectedId] = useState(INITIAL_ENTRIES[0]?.id || null);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("All");
   const [editing, setEditing] = useState(false);
+  const [editingCertId, setEditingCertId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Load persisted data on mount
@@ -98,9 +115,14 @@ export default function CareerBoard() {
         const res = await fetch("/api/career-board-data");
         if (res.ok) {
           const data = await res.json();
-          if (data && !cancelled && Array.isArray(data.entries) && data.seedVersion === SEED_VERSION) {
-            setEntries(data.entries);
-            setSelectedId(data.entries[0]?.id || null);
+          if (data && !cancelled && data.seedVersion === SEED_VERSION) {
+            if (Array.isArray(data.entries)) {
+              setEntries(data.entries);
+              setSelectedId(data.entries[0]?.id || null);
+            }
+            if (Array.isArray(data.certifications)) {
+              setCertifications(data.certifications);
+            }
           }
         }
       } catch { /* local-only fallback */ }
@@ -109,15 +131,15 @@ export default function CareerBoard() {
     return () => { cancelled = true; };
   }, []);
 
-  // Persist whenever entries change (after initial load)
+  // Persist whenever entries or certifications change (after initial load)
   useEffect(() => {
     if (!dataLoaded) return;
     fetch("/api/career-board-data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries, seedVersion: SEED_VERSION }),
+      body: JSON.stringify({ entries, certifications, seedVersion: SEED_VERSION }),
     }).catch(() => { /* silent */ });
-  }, [dataLoaded, entries]);
+  }, [dataLoaded, entries, certifications]);
 
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
@@ -155,6 +177,21 @@ export default function CareerBoard() {
     if (!entry) return;
     const has = (entry.tags || []).includes(tag);
     updateEntry(id, { tags: has ? entry.tags.filter(t => t !== tag) : [...(entry.tags || []), tag] });
+  }
+
+  function addCertification() {
+    const cert = newCertTemplate();
+    setCertifications(prev => [cert, ...prev]);
+    setEditingCertId(cert.id);
+  }
+
+  function updateCertification(id, patch) {
+    setCertifications(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
+  }
+
+  function removeCertification(id) {
+    setCertifications(prev => prev.filter(c => c.id !== id));
+    if (editingCertId === id) setEditingCertId(null);
   }
 
   const navItems = [
@@ -211,6 +248,85 @@ export default function CareerBoard() {
           </div>
         </aside>
 
+        {activeSection === "certifications" ? (
+          /* ═══ Certifications page ═══ */
+          <main style={{ flex: 1, minWidth: 0, overflowY: "auto", padding: "28px 40px" }}>
+            <div style={{ maxWidth: "760px", margin: "0 auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#f8fafc", margin: 0 }}>Certifications</h2>
+                <button onClick={addCertification} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 500, borderRadius: "8px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>+ Add Certification</button>
+              </div>
+              <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 24px", lineHeight: 1.5 }}>
+                Your earned certifications. Add new ones as you accomplish them.
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {certifications.map(cert => {
+                  const isEditingCert = editingCertId === cert.id;
+                  return (
+                    <div key={cert.id} style={{ padding: "18px 20px", borderRadius: "12px", background: "#0f1a2e", border: "1px solid #1e293b" }}>
+                      {isEditingCert ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <div>
+                            <label style={{ display: "block", fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>Certification name</label>
+                            <input
+                              value={cert.name}
+                              onChange={e => updateCertification(cert.id, { name: e.target.value })}
+                              placeholder="e.g. AWS Certified Solutions Architect - Associate"
+                              style={{ width: "100%", padding: "9px 12px", fontSize: "14px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", gap: "10px" }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ display: "block", fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>Issuer</label>
+                              <input
+                                value={cert.issuer}
+                                onChange={e => updateCertification(cert.id, { issuer: e.target.value })}
+                                placeholder="e.g. Amazon Web Services"
+                                style={{ width: "100%", padding: "9px 12px", fontSize: "14px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+                              />
+                            </div>
+                            <div style={{ width: "180px" }}>
+                              <label style={{ display: "block", fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>Earned</label>
+                              <input
+                                value={cert.earned}
+                                onChange={e => updateCertification(cert.id, { earned: e.target.value })}
+                                placeholder="e.g. June 2026"
+                                style={{ width: "100%", padding: "9px 12px", fontSize: "14px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
+                            <button onClick={() => removeCertification(cert.id)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #7f1d1d", background: "transparent", color: "#f87171", cursor: "pointer" }}>Delete</button>
+                            <button onClick={() => setEditingCertId(null)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer" }}>Done</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
+                          <div style={{ display: "flex", gap: "14px", alignItems: "flex-start", minWidth: 0 }}>
+                            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#1e3a5f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏅</div>
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 3px" }}>{cert.name || "Untitled Certification"}</p>
+                              {cert.issuer && <p style={{ fontSize: "13px", color: "#94a3b8", margin: "0 0 2px" }}>{cert.issuer}</p>}
+                              {cert.earned && <p style={{ fontSize: "12px", color: "#60a5fa", margin: 0 }}>Earned {cert.earned}</p>}
+                            </div>
+                          </div>
+                          <button onClick={() => setEditingCertId(cert.id)} style={{ padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {certifications.length === 0 && (
+                  <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "24px" }}>
+                    No certifications yet. Click &ldquo;Add Certification&rdquo; to add your first.
+                  </p>
+                )}
+              </div>
+            </div>
+          </main>
+        ) : (
+        <>
         {/* Middle: entry list */}
         <section style={{ width: "380px", flexShrink: 0, borderRight: "1px solid #1e293b", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "24px 24px 16px", flexShrink: 0 }}>
@@ -364,6 +480,8 @@ export default function CareerBoard() {
             </div>
           )}
         </main>
+        </>
+        )}
       </div>
     </div>
   );
