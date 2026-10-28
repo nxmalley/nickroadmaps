@@ -35,9 +35,10 @@ const newGoalTemplate = () => ({
   id: `goal-${Date.now()}`,
   title: "",
   description: "",
-  started: "",       // when you decided to pursue it (free text, you fill in)
-  accomplished: "",  // when you completed it (free text, you fill in later)
-  status: "current", // "current" | "achieved"
+  started: "",         // when you decided to pursue it (free text, you fill in)
+  accomplished: "",    // when you completed it (free text, you fill in later)
+  status: "current",   // "current" | "achieved" | "archived"
+  archiveReason: "",   // why it was archived (set when status -> "archived")
 });
 
 // Parse a free-text "earned" date (e.g. "February 2026", "Feb 2026", "2026")
@@ -136,6 +137,9 @@ export default function CareerBoard() {
   const [editing, setEditing] = useState(false);
   const [editingCertId, setEditingCertId] = useState(null);
   const [editingGoalId, setEditingGoalId] = useState(null);
+  const [goalView, setGoalView] = useState("current"); // "current" | "achieved" | "archived"
+  const [archivingGoalId, setArchivingGoalId] = useState(null); // goal pending an archive reason
+  const [archiveReasonDraft, setArchiveReasonDraft] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Load persisted data on mount
@@ -259,6 +263,25 @@ export default function CareerBoard() {
 
   function achieveGoal(id) {
     setGoals(prev => prev.map(g => g.id === id ? { ...g, status: "achieved" } : g));
+    if (editingGoalId === id) setEditingGoalId(null);
+  }
+
+  function startArchiveGoal(id) {
+    setArchivingGoalId(id);
+    setArchiveReasonDraft("");
+  }
+
+  function cancelArchiveGoal() {
+    setArchivingGoalId(null);
+    setArchiveReasonDraft("");
+  }
+
+  function confirmArchiveGoal(id) {
+    const reason = archiveReasonDraft.trim();
+    if (!reason) return; // require a reason
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, status: "archived", archiveReason: reason } : g));
+    setArchivingGoalId(null);
+    setArchiveReasonDraft("");
     if (editingGoalId === id) setEditingGoalId(null);
   }
 
@@ -399,24 +422,57 @@ export default function CareerBoard() {
                 <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#f8fafc", margin: 0 }}>Goals</h2>
                 <button onClick={addGoal} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 500, borderRadius: "8px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>+ Add Goal</button>
               </div>
-              <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 24px", lineHeight: 1.5 }}>
+              <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }}>
                 Track what you&apos;re working toward. Fill in the accomplished date and mark a goal achieved when you reach it.
               </p>
 
-              {["current", "achieved"].map(groupStatus => {
-                const groupGoals = goals.filter(g => (g.status || "current") === groupStatus);
-                const heading = groupStatus === "current" ? "Current Goals" : "Achieved Goals";
+              {/* View switcher: Current/Achieved tabs (left) + Archived toggle (right) */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid #1e293b", paddingBottom: "0" }}>
+                <div style={{ display: "flex", gap: "4px" }}>
+                  {[{ key: "current", label: "Current" }, { key: "achieved", label: "Achieved" }].map(tab => {
+                    const isActive = goalView === tab.key;
+                    const count = goals.filter(g => (g.status || "current") === tab.key).length;
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => setGoalView(tab.key)}
+                        style={{
+                          padding: "8px 16px", fontSize: "14px", fontWeight: isActive ? 600 : 400,
+                          border: "none", background: "transparent", cursor: "pointer",
+                          color: isActive ? "#60a5fa" : "#94a3b8",
+                          borderBottom: isActive ? "2px solid #2563eb" : "2px solid transparent",
+                          marginBottom: "-1px",
+                        }}
+                      >
+                        {tab.label} <span style={{ color: "#64748b", fontSize: "12px" }}>({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setGoalView(goalView === "archived" ? "current" : "archived")}
+                  style={{
+                    padding: "6px 12px", fontSize: "12px", borderRadius: "6px", cursor: "pointer",
+                    border: `1px solid ${goalView === "archived" ? "#334155" : "#1e293b"}`,
+                    background: goalView === "archived" ? "#1e293b" : "transparent",
+                    color: goalView === "archived" ? "#cbd5e1" : "#64748b",
+                  }}
+                >
+                  {goalView === "archived" ? "← Back to goals" : `Archived (${goals.filter(g => g.status === "archived").length})`}
+                </button>
+              </div>
+
+              {(() => {
+                const groupGoals = goals.filter(g => (g.status || "current") === goalView);
                 return (
-                  <div key={groupStatus} style={{ marginBottom: "28px" }}>
-                    <p style={{ fontSize: "13px", fontWeight: 600, color: groupStatus === "achieved" ? "#4ade80" : "#60a5fa", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 12px" }}>
-                      {heading} <span style={{ color: "#64748b", fontWeight: 400 }}>({groupGoals.length})</span>
-                    </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                       {groupGoals.map(goal => {
                         const isEditingGoal = editingGoalId === goal.id;
-                        const canAchieve = goal.status !== "achieved" && !!goal.accomplished.trim();
+                        const isArchivingGoal = archivingGoalId === goal.id;
+                        const canAchieve = goal.status === "current" && !!(goal.accomplished || "").trim();
+                        const borderColor = goal.status === "achieved" ? "#1e3a2e" : goal.status === "archived" ? "#3a2e1e" : "#1e293b";
                         return (
-                          <div key={goal.id} style={{ padding: "16px 20px", borderRadius: "12px", background: "#0f1a2e", border: `1px solid ${goal.status === "achieved" ? "#1e3a2e" : "#1e293b"}` }}>
+                          <div key={goal.id} style={{ padding: "16px 20px", borderRadius: "12px", background: "#0f1a2e", border: `1px solid ${borderColor}` }}>
                             {isEditingGoal ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                                 <div>
@@ -472,14 +528,34 @@ export default function CareerBoard() {
                                       {goal.started && <span style={{ fontSize: "12px", color: "#94a3b8" }}>Started: <span style={{ color: "#cbd5e1" }}>{goal.started}</span></span>}
                                       {goal.accomplished && <span style={{ fontSize: "12px", color: "#94a3b8" }}>Accomplished: <span style={{ color: goal.status === "achieved" ? "#4ade80" : "#60a5fa" }}>{goal.accomplished}</span></span>}
                                     </div>
+                                    {goal.status === "archived" && goal.archiveReason && (
+                                      <p style={{ fontSize: "12px", color: "#b5916a", margin: "8px 0 0", fontStyle: "italic" }}>Archived: {goal.archiveReason}</p>
+                                    )}
                                   </div>
                                   <button onClick={() => setEditingGoalId(goal.id)} style={{ padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer", flexShrink: 0 }}>Edit</button>
                                 </div>
-                                {canAchieve && (
-                                  <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b" }}>
-                                    <button onClick={() => achieveGoal(goal.id)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#16a34a", color: "#fff", cursor: "pointer" }}>Mark as Achieved</button>
+                                {isArchivingGoal ? (
+                                  <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                    <label style={{ fontSize: "12px", color: "#64748b" }}>Reason for archiving</label>
+                                    <textarea
+                                      value={archiveReasonDraft}
+                                      onChange={e => setArchiveReasonDraft(e.target.value)}
+                                      placeholder="Why are you archiving this goal? (e.g. no longer relevant, replaced by a different goal)"
+                                      style={{ width: "100%", minHeight: "60px", padding: "9px 12px", fontSize: "14px", lineHeight: 1.5, border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit" }}
+                                    />
+                                    <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                                      <button onClick={cancelArchiveGoal} style={{ padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "transparent", color: "#94a3b8", cursor: "pointer" }}>Cancel</button>
+                                      <button onClick={() => confirmArchiveGoal(goal.id)} disabled={!archiveReasonDraft.trim()} style={{ padding: "7px 14px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: archiveReasonDraft.trim() ? "#b45309" : "#3a2e1e", color: archiveReasonDraft.trim() ? "#fff" : "#6b5533", cursor: archiveReasonDraft.trim() ? "pointer" : "not-allowed" }}>Archive goal</button>
+                                    </div>
                                   </div>
-                                )}
+                                ) : (goal.status === "current" && (
+                                  <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b", display: "flex", gap: "8px" }}>
+                                    {canAchieve && (
+                                      <button onClick={() => achieveGoal(goal.id)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#16a34a", color: "#fff", cursor: "pointer" }}>Mark as Achieved</button>
+                                    )}
+                                    <button onClick={() => startArchiveGoal(goal.id)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "1px solid #3a2e1e", background: "transparent", color: "#b5916a", cursor: "pointer" }}>Archive</button>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -487,13 +563,14 @@ export default function CareerBoard() {
                       })}
                       {groupGoals.length === 0 && (
                         <p style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
-                          {groupStatus === "current" ? "No current goals. Click “Add Goal” to set one." : "No achieved goals yet."}
+                          {goalView === "current" ? "No current goals. Click “Add Goal” to set one."
+                            : goalView === "achieved" ? "No achieved goals yet."
+                            : "No archived goals."}
                         </p>
                       )}
                     </div>
-                  </div>
                 );
-              })}
+              })()}
             </div>
           </main>
         ) : (
