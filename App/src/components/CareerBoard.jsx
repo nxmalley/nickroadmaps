@@ -28,6 +28,22 @@ const newCertTemplate = () => ({
   earned: "",
 });
 
+// Parse a free-text "earned" date (e.g. "February 2026", "Feb 2026", "2026")
+// into a sortable timestamp. Unparseable/blank values return -Infinity so they
+// sink to the bottom of a newest-first sort (e.g. a half-typed new entry).
+function parseEarnedDate(earned) {
+  if (!earned || typeof earned !== "string") return -Infinity;
+  const t = Date.parse(earned);
+  if (!Number.isNaN(t)) return t;
+  // Fallback: a bare year like "2026"
+  const yearMatch = earned.match(/\b(19|20)\d{2}\b/);
+  if (yearMatch) {
+    const y = Date.parse(`${yearMatch[0]}-01-01`);
+    if (!Number.isNaN(y)) return y;
+  }
+  return -Infinity;
+}
+
 // Bullet markers by nesting depth, cycling for deeper levels.
 const BULLET_MARKERS = ["•", "◦", "▪", "‣"];
 
@@ -274,7 +290,7 @@ export default function CareerBoard() {
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {certifications.map(cert => {
+                {[...certifications].sort((a, b) => parseEarnedDate(b.earned) - parseEarnedDate(a.earned)).map(cert => {
                   const isEditingCert = editingCertId === cert.id;
                   return (
                     <div key={cert.id} style={{ padding: "18px 20px", borderRadius: "12px", background: "#0f1a2e", border: "1px solid #1e293b" }}>
