@@ -28,6 +28,18 @@ const newCertTemplate = () => ({
   earned: "",
 });
 
+// Goals start empty; the user creates them. Each goal tracks its own status.
+const INITIAL_GOALS = [];
+
+const newGoalTemplate = () => ({
+  id: `goal-${Date.now()}`,
+  title: "",
+  description: "",
+  started: "",       // when you decided to pursue it (free text, you fill in)
+  accomplished: "",  // when you completed it (free text, you fill in later)
+  status: "current", // "current" | "achieved"
+});
+
 // Parse a free-text "earned" date (e.g. "February 2026", "Feb 2026", "2026")
 // into a sortable timestamp. Unparseable/blank values return -Infinity so they
 // sink to the bottom of a newest-first sort (e.g. a half-typed new entry).
@@ -116,12 +128,14 @@ export default function CareerBoard() {
   const [loadSucceeded, setLoadSucceeded] = useState(false);
   const [entries, setEntries] = useState(INITIAL_ENTRIES);
   const [certifications, setCertifications] = useState(INITIAL_CERTIFICATIONS);
+  const [goals, setGoals] = useState(INITIAL_GOALS);
   const [activeSection, setActiveSection] = useState("journal");
   const [selectedId, setSelectedId] = useState(INITIAL_ENTRIES[0]?.id || null);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("All");
   const [editing, setEditing] = useState(false);
   const [editingCertId, setEditingCertId] = useState(null);
+  const [editingGoalId, setEditingGoalId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Load persisted data on mount
@@ -143,6 +157,11 @@ export default function CareerBoard() {
             // the seed (covers older saves that predate the certifications field).
             if (Array.isArray(data.certifications)) {
               setCertifications(data.certifications);
+            }
+            // Goals: load stored list if present (covers older saves that
+            // predate the goals field, which simply keep the empty default).
+            if (Array.isArray(data.goals)) {
+              setGoals(data.goals);
             }
           }
           // Load genuinely succeeded (server responded ok) — safe to persist now.
@@ -166,9 +185,9 @@ export default function CareerBoard() {
     fetch("/api/career-board-data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries, certifications }),
+      body: JSON.stringify({ entries, certifications, goals }),
     }).catch(() => { /* silent */ });
-  }, [loadSucceeded, entries, certifications]);
+  }, [loadSucceeded, entries, certifications, goals]);
 
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
@@ -221,6 +240,26 @@ export default function CareerBoard() {
   function removeCertification(id) {
     setCertifications(prev => prev.filter(c => c.id !== id));
     if (editingCertId === id) setEditingCertId(null);
+  }
+
+  function addGoal() {
+    const goal = newGoalTemplate();
+    setGoals(prev => [goal, ...prev]);
+    setEditingGoalId(goal.id);
+  }
+
+  function updateGoal(id, patch) {
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...patch } : g));
+  }
+
+  function removeGoal(id) {
+    setGoals(prev => prev.filter(g => g.id !== id));
+    if (editingGoalId === id) setEditingGoalId(null);
+  }
+
+  function achieveGoal(id) {
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, status: "achieved" } : g));
+    if (editingGoalId === id) setEditingGoalId(null);
   }
 
   const navItems = [
@@ -350,6 +389,111 @@ export default function CareerBoard() {
                   </p>
                 )}
               </div>
+            </div>
+          </main>
+        ) : activeSection === "goals" ? (
+          /* ═══ Goals page ═══ */
+          <main style={{ flex: 1, minWidth: 0, overflowY: "auto", padding: "28px 40px" }}>
+            <div style={{ maxWidth: "760px", margin: "0 auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#f8fafc", margin: 0 }}>Goals</h2>
+                <button onClick={addGoal} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 500, borderRadius: "8px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>+ Add Goal</button>
+              </div>
+              <p style={{ fontSize: "14px", color: "#94a3b8", margin: "0 0 24px", lineHeight: 1.5 }}>
+                Track what you&apos;re working toward. Fill in the accomplished date and mark a goal achieved when you reach it.
+              </p>
+
+              {["current", "achieved"].map(groupStatus => {
+                const groupGoals = goals.filter(g => (g.status || "current") === groupStatus);
+                const heading = groupStatus === "current" ? "Current Goals" : "Achieved Goals";
+                return (
+                  <div key={groupStatus} style={{ marginBottom: "28px" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 600, color: groupStatus === "achieved" ? "#4ade80" : "#60a5fa", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 12px" }}>
+                      {heading} <span style={{ color: "#64748b", fontWeight: 400 }}>({groupGoals.length})</span>
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {groupGoals.map(goal => {
+                        const isEditingGoal = editingGoalId === goal.id;
+                        const canAchieve = goal.status !== "achieved" && !!goal.accomplished.trim();
+                        return (
+                          <div key={goal.id} style={{ padding: "16px 20px", borderRadius: "12px", background: "#0f1a2e", border: `1px solid ${goal.status === "achieved" ? "#1e3a2e" : "#1e293b"}` }}>
+                            {isEditingGoal ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                <div>
+                                  <label style={{ display: "block", fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>Goal</label>
+                                  <input
+                                    value={goal.title}
+                                    onChange={e => updateGoal(goal.id, { title: e.target.value })}
+                                    placeholder="e.g. Earn AWS DevOps Engineer - Professional"
+                                    style={{ width: "100%", padding: "9px 12px", fontSize: "14px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ display: "block", fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>Description</label>
+                                  <textarea
+                                    value={goal.description}
+                                    onChange={e => updateGoal(goal.id, { description: e.target.value })}
+                                    placeholder="What is this goal and why does it matter?"
+                                    style={{ width: "100%", minHeight: "70px", padding: "9px 12px", fontSize: "14px", lineHeight: 1.5, border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit" }}
+                                  />
+                                </div>
+                                <div style={{ display: "flex", gap: "10px" }}>
+                                  <div style={{ flex: 1 }}>
+                                    <label style={{ display: "block", fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>Started (when you decided to pursue it)</label>
+                                    <input
+                                      value={goal.started}
+                                      onChange={e => updateGoal(goal.id, { started: e.target.value })}
+                                      placeholder="e.g. September 2026"
+                                      style={{ width: "100%", padding: "9px 12px", fontSize: "14px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+                                    />
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <label style={{ display: "block", fontSize: "12px", color: "#64748b", marginBottom: "4px" }}>Accomplished (fill in when done)</label>
+                                    <input
+                                      value={goal.accomplished}
+                                      onChange={e => updateGoal(goal.id, { accomplished: e.target.value })}
+                                      placeholder="e.g. April 2027"
+                                      style={{ width: "100%", padding: "9px 12px", fontSize: "14px", border: "1px solid #1e293b", borderRadius: "8px", background: "#111c30", color: "#e2e8f0", boxSizing: "border-box" }}
+                                    />
+                                  </div>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
+                                  <button onClick={() => removeGoal(goal.id)} style={{ padding: "8px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #7f1d1d", background: "transparent", color: "#f87171", cursor: "pointer" }}>Delete</button>
+                                  <button onClick={() => setEditingGoalId(null)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer" }}>Done</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <p style={{ fontSize: "16px", fontWeight: 600, color: "#f1f5f9", margin: "0 0 4px" }}>{goal.title || "Untitled Goal"}</p>
+                                    {goal.description && <p style={{ fontSize: "14px", color: "#cbd5e1", margin: "0 0 8px", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{goal.description}</p>}
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+                                      {goal.started && <span style={{ fontSize: "12px", color: "#94a3b8" }}>Started: <span style={{ color: "#cbd5e1" }}>{goal.started}</span></span>}
+                                      {goal.accomplished && <span style={{ fontSize: "12px", color: "#94a3b8" }}>Accomplished: <span style={{ color: goal.status === "achieved" ? "#4ade80" : "#60a5fa" }}>{goal.accomplished}</span></span>}
+                                    </div>
+                                  </div>
+                                  <button onClick={() => setEditingGoalId(goal.id)} style={{ padding: "7px 14px", fontSize: "12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#cbd5e1", cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                                </div>
+                                {canAchieve && (
+                                  <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b" }}>
+                                    <button onClick={() => achieveGoal(goal.id)} style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 500, borderRadius: "6px", border: "none", background: "#16a34a", color: "#fff", cursor: "pointer" }}>Mark as Achieved</button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {groupGoals.length === 0 && (
+                        <p style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
+                          {groupStatus === "current" ? "No current goals. Click “Add Goal” to set one." : "No achieved goals yet."}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </main>
         ) : (
